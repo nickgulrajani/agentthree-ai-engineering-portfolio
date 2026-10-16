@@ -1,0 +1,18 @@
+[submodule "agentic-ai-ucs"]
+	path = agentic-ai-ucs
+	url = https://github.com/nickgulrajani/agentic-ai-ucs.git
+[submodule "agentthree-ai-devsecops"]
+	path = agentthree-ai-devsecops
+	url = https://github.com/nickgulrajani/agentthree-ai-devsecops.git
+[submodule "agentthree-confidential-ai"]
+	path = agentthree-confidential-ai
+	url = https://github.com/nickgulrajani/agentthree-confidential-ai.git
+[submodule "agentthree-enterprise-rag"]
+	path = agentthree-enterprise-rag
+	url = https://github.com/nickgulrajani/agentthree-enterprise-rag.git
+[submodule "agentthree-multicloud-zero-trust"]
+	path = agentthree-multicloud-zero-trust
+	url = https://github.com/nickgulrajani/agentthree-multicloud-zero-trust.git
+[submodule "agentthree-prior-auth"]
+	path = agentthree-prior-auth
+	url = https://github.com/nickgulrajani/agentthree-prior-auth.git
