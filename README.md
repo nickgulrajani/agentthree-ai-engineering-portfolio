@@ -8,7 +8,6 @@ Website: [agentthree.ai](https://agentthree.ai/)
 
 | Project | Path | Description |
 |---------|------|-------------|
-| Agentic AI UCS | [`agentic-ai-ucs/`](./agentic-ai-ucs) | Agent orchestration, ADK, MCP, A2A |
 | AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | CI/CD, security scanning, evaluation gates |
 | Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | Prior auth with ADK, MCP, A2A, Gemini, HITL |
 | Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | Hybrid search, ACLs, citations, grounding |
