@@ -126,6 +126,34 @@ Fault injection: MCP timeout, eligibility outage, missing policy, grounding fail
 
 ---
 
+## Evaluation results (published)
+
+Deterministic offline scorer (`evaluation/run_eval.py`) — no Gemini required. Baseline committed in [`evaluation/published_results.json`](evaluation/published_results.json).
+
+| Case ID | Agent task (expected outcome) | Actual | Pass |
+|---------|-------------------------------|--------|------|
+| `meets-criteria` | Recommend approval after 6+ weeks PT + neuro findings | `meets` | ✓ |
+| `missing-documentation` | Pend — incomplete conservative care | `pend` | ✓ |
+| `red-flag-urgent` | Escalate — cauda equina red flags | `urgent` | ✓ |
+| `meets-pt-words` | Recommend approval (alternate meets path) | `meets` | ✓ |
+| `pend-prior-imaging` | Pend — prior lumbar MRI in window | `pend` | ✓ |
+
+| Metric | Result |
+|--------|--------|
+| **Task / outcome accuracy** | **5 / 5 (100%)** |
+| Golden cases | 5 synthetic CPT `72148` scenarios |
+| CDS grounding on meets path | Citations present; `unsupported = 0` |
+| Pytest (domain + MCP + eval) | 15 passed |
+
+Reproduce:
+
+```bash
+.venv/bin/python -m evaluation.run_eval   # writes evaluation/last_results.json
+.venv/bin/python -m pytest tests/ -q
+```
+
+---
+
 ## Develop next
 
 | Area | Folder | Next increments |

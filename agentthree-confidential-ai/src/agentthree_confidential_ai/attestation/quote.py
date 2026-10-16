@@ -31,6 +31,8 @@ class AttestationQuote:
     nonce: str
     issued_at: int
     signature: str
+    # TEE debug / unlocked mode (e.g. SEV-SNP DEBUG, Nitro DEBUG) — must fail closed.
+    debug_mode: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -55,6 +57,8 @@ def issue_quote(
     image_digest: str,
     tee_type: str = "simulated-sev-snp",
     nonce: str | None = None,
+    issued_at: int | None = None,
+    debug_mode: bool = False,
 ) -> AttestationQuote:
     """Issue a signed quote as if from the Hardware Root of Trust."""
     nonce = nonce or hashlib.sha256(str(time.time_ns()).encode()).hexdigest()[:16]
@@ -65,8 +69,9 @@ def issue_quote(
         tee_type=tee_type,
         measurement=measurement,
         nonce=nonce,
-        issued_at=int(time.time()),
+        issued_at=int(time.time()) if issued_at is None else issued_at,
         signature="",
+        debug_mode=debug_mode,
     )
     signature = _sign(draft.to_bytes())
     return AttestationQuote(
@@ -77,6 +82,7 @@ def issue_quote(
         nonce=draft.nonce,
         issued_at=draft.issued_at,
         signature=signature,
+        debug_mode=draft.debug_mode,
     )
 
 
@@ -94,4 +100,5 @@ def forge_untrusted_claim(
         nonce="forged",
         issued_at=int(time.time()),
         signature="deadbeef" * 8,
+        debug_mode=False,
     )

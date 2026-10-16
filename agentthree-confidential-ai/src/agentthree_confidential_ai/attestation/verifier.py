@@ -59,4 +59,11 @@ def verify_quote(
             quote=quote,
         )
 
+    if quote.debug_mode:
+        return VerificationResult(
+            ok=False,
+            reason="TEE_DEBUG_MODE: debug/unlocked TEE cannot release keys",
+            quote=quote,
+        )
+
     return VerificationResult(ok=True, reason="ATTESTED", quote=quote)

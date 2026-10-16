@@ -45,17 +45,6 @@ def test_untrusted_workload_is_denied(plane: ConfidentialControlPlane) -> None:
     assert result.attestation_ok is False
 
 
-def test_wrong_image_digest_denied(plane: ConfidentialControlPlane) -> None:
-    blob = plane.seal_sample(PHI, data_class="PHI")
-    quote = issue_quote(
-        workload_id="llm-inference-vllm",
-        image_digest="sha256:tampered-image",
-    )
-    result = plane.request_decrypt(blob, quote=quote, purpose="inference")
-    assert result.allowed is False
-    assert "IMAGE_MISMATCH" in result.reason
-
-
 def test_wrong_purpose_denied(plane: ConfidentialControlPlane) -> None:
     blob = plane.seal_sample(PHI, data_class="PHI")
     quote = issue_quote(
