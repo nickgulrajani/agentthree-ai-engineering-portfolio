@@ -1,0 +1,140 @@
+name: AI DevSecOps Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Demo scenario"
+        required: true
+        default: pass
+        type: choice
+        options:
+          - pass
+          - fail-checkov
+          - fail-eval
+          - fail-health
+      approve_prod:
+        description: "Set true to satisfy PROD approval gate"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+
+# No cloud credentials. No terraform apply. No image push.
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: pytest · MCP contracts · eval unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: |
+          pip install -r requirements.txt
+          pip install -e .
+      - run: pytest -q
+
+  iac:
+    name: Terraform validate · Checkov
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install checkov
+      - name: Select Terraform directory
+        id: tf
+        run: |
+          SCENARIO="${{ github.event.inputs.scenario || 'pass' }}"
+          if [ "$SCENARIO" = "fail-checkov" ]; then
+            echo "dir=infra/insecure" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=infra/secure" >> "$GITHUB_OUTPUT"
+          fi
+      - name: terraform init / fmt / validate
+        run: |
+          terraform -chdir=${{ steps.tf.outputs.dir }} init -backend=false -input=false
+          terraform -chdir=${{ steps.tf.outputs.dir }} fmt -check -recursive
+          terraform -chdir=${{ steps.tf.outputs.dir }} validate
+      - name: Checkov
+        run: checkov -d ${{ steps.tf.outputs.dir }} --config-file .checkov.yaml --quiet
+
+  evaluation:
+    name: Agent evaluation gate
+    runs-on: ubuntu-latest
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: |
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Select fixture
+        id: eval
+        run: |
+          SCENARIO="${{ github.event.inputs.scenario || 'pass' }}"
+          if [ "$SCENARIO" = "fail-eval" ]; then
+            echo "fixture=evaluation/fixtures/fail_grounding.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "fixture=evaluation/fixtures/pass_grounding.json" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run offline evaluation
+        run: python -m agentthree_devsecops.evaluation --fixture ${{ steps.eval.outputs.fixture }}
+
+  container-scan:
+    name: Trivy (local FS — no registry)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+          format: table
+          skip-dirs: .git,.venv,.terraform
+
+  deploy-dry-run:
+    name: Approval · deploy dry-run · health/rollback
+    runs-on: ubuntu-latest
+    needs: [quality, iac, evaluation, container-scan]
+    # Optional: add `environment: production` in GitHub Settings → Environments
+    # with required reviewers for a real human approval gate (still $0).
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: |
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Production approval flag
+        run: |
+          APPROVE="${{ github.event.inputs.approve_prod || 'true' }}"
+          echo "PROD_APPROVED=$APPROVE" >> "$GITHUB_ENV"
+      - name: Deploy dry-run
+        run: python -m agentthree_devsecops.deploy_dry_run --target prod --require-approval
+      - name: Health / rollback
+        run: |
+          SCENARIO="${{ github.event.inputs.scenario || 'pass' }}"
+          RATE=0.0
+          if [ "$SCENARIO" = "fail-health" ]; then RATE=0.081; fi
+          python -m agentthree_devsecops.rollback --error-rate "$RATE"

@@ -1,0 +1,11 @@
+{
+  "id": "golden-set-fail",
+  "label": "Deliberately failing grounding evaluation — blocks deployment",
+  "metrics": {
+    "grounding": 0.82,
+    "faithfulness": 0.88,
+    "prompt_injection_pass_rate": 0.67,
+    "unsafe_tool_use": 1
+  },
+  "notes": "Offline fixture — no LLM calls. Demonstrates promotion block."
+}

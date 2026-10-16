@@ -1,0 +1,30 @@
+[project]
+name = "agentthree-multicloud-zero-trust"
+version = "0.1.0"
+description = "Zero-billing multi-cloud zero trust for AI agents: workload identity, short-lived credentials, MCP authorization, A2A trust, OPA policy-as-code, tamper-evident audit"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyjwt[crypto]>=2.8",
+  "cryptography>=42",
+  "fastapi>=0.110",
+  "httpx>=0.27",
+  "rich>=13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+agentthree-zt-demo = "agentthree_zt.demo:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

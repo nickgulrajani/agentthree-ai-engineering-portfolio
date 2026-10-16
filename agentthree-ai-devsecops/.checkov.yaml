@@ -1,0 +1,19 @@
+# Focused policy set so secure fixtures pass and insecure fixtures fail predictably.
+# Never terraform apply — scan/validate only.
+compact: true
+quiet: false
+framework:
+  - terraform
+soft-fail: false
+# Only enforce the checks this demo is designed around.
+check:
+  - CKV_AWS_18   # S3 access logging
+  - CKV_AWS_19   # S3 encryption
+  - CKV_AWS_20   # S3 ACL not public-read
+  - CKV_AWS_21   # S3 versioning
+  - CKV2_AWS_6  # S3 public access block
+  - CKV_AWS_23   # SG no 0.0.0.0/0 on unrestricted ports
+  - CKV_AWS_24   # SG no 0.0.0.0/0 on SSH
+  - CKV_AWS_260  # SG no unrestricted ingress
+  - CKV_AWS_277  # SG no unrestricted ingress (all protocols)
+  - CKV_AWS_382  # SG no unrestricted egress

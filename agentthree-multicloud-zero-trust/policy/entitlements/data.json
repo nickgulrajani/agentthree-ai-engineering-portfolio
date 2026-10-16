@@ -1,0 +1,35 @@
+{
+  "classification_rank": {
+    "public": 0,
+    "internal": 1,
+    "confidential": 2,
+    "restricted": 3
+  },
+  "tool_scopes": {
+    "list_datasets": "records:read",
+    "query_records": "records:read"
+  },
+  "max_delegation_depth": 1,
+  "agents": {
+    "claims-agent": {
+      "datasets": ["claims"],
+      "purposes": ["claims-adjudication"],
+      "max_classification": "confidential"
+    },
+    "marketing-agent": {
+      "datasets": ["campaigns"],
+      "purposes": ["campaign-analytics"],
+      "max_classification": "internal"
+    }
+  },
+  "a2a": {
+    "orchestrator": {
+      "may_delegate_to": ["claims-agent"],
+      "purposes": ["claims-adjudication"]
+    },
+    "marketing-agent": {
+      "may_delegate_to": [],
+      "purposes": []
+    }
+  }
+}

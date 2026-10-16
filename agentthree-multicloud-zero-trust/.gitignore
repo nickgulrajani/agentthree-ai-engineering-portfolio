@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+artifacts/
+.terraform/
+*.tfstate
+*.tfstate.*
+.DS_Store

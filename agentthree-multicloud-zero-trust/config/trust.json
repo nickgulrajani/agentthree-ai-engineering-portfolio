@@ -1,0 +1,37 @@
+{
+  "_comment": "Single source of truth for workload trust. Read by Terraform (infra/envs/demo) AND by the local token broker, so the demo enforces exactly what the IaC would provision.",
+  "token_ttl_seconds": 300,
+  "broker_issuer": "https://sts.agentthree.local",
+  "mcp_resource": "https://mcp.agentthree.local/records",
+  "issuers": {
+    "aws": {
+      "issuer": "https://oidc.eks.us-east-1.amazonaws.com/id/AGENTTHREE",
+      "audience": "sts.amazonaws.com"
+    },
+    "azure": {
+      "issuer": "https://eastus.oic.prod-aks.azure.com/agentthree-tenant/agents/",
+      "audience": "api://AzureADTokenExchange"
+    },
+    "gcp": {
+      "issuer": "https://container.googleapis.com/v1/projects/agentthree/locations/us-central1/clusters/agents",
+      "audience": "agentthree-gke"
+    }
+  },
+  "workloads": {
+    "claims-agent": {
+      "cloud": "aws",
+      "subject": "system:serviceaccount:agents:claims-agent",
+      "scopes": ["records:read", "a2a:accept"]
+    },
+    "orchestrator": {
+      "cloud": "azure",
+      "subject": "system:serviceaccount:agents:orchestrator",
+      "scopes": ["a2a:delegate"]
+    },
+    "marketing-agent": {
+      "cloud": "gcp",
+      "subject": "system:serviceaccount:marketing:marketing-agent",
+      "scopes": ["records:read", "a2a:delegate"]
+    }
+  }
+}

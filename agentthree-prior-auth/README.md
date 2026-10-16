@@ -1,0 +1,151 @@
+# AgentThree — Prior Authorization
+
+One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) using **Google ADK**, **A2A**, **MCP**, and **Gemini**, connected to a Live Run UI.
+
+**Repo:** [nickgulrajani/agentthree-prior-auth](https://github.com/nickgulrajani/agentthree-prior-auth)
+
+> Fictional patients, payer, and policy — **not for clinical use**.
+
+---
+
+## Implementation status
+
+| Area | Status | Notes |
+|------|--------|-------|
+| ADK agents (intake · prior auth · CDS) | **Implemented (local)** | Google ADK `LlmAgent`s in `agents/` |
+| A2A handoffs + MCP clinical tools | **Implemented (local)** | FastMCP server over demo FHIR / policy data |
+| Live Run UI (React + classic HTML) | **Implemented (local)** | SSE pipeline + human-in-the-loop gate |
+| Audit ledger | **Implemented (local)** | Case trail for demo runs |
+| Gemini reasoning | **Optional live API** | AI Studio free tier when `DEMO_MODE=false` + `GOOGLE_API_KEY` |
+| Fixture / offline path | **Implemented** | `DEMO_MODE=true` — $0; MCP + A2A still exercise real code paths |
+| Vertex AI / Workspace Gemini | **Not used by default** | Keep `GOOGLE_GENAI_USE_VERTEXAI=FALSE` |
+| Cloud Run / GKE deploy | **Not deployed** | Optional future — not required for the demo |
+
+**Simulated vs cloud:** Orchestration, MCP tools, A2A flow, and UI are real local services. Clinical data and payer policy are **synthetic**. LLM calls are either fixture-backed (`DEMO_MODE=true`) or optional **AI Studio** API — not a production Vertex / Cloud Run deployment.
+
+Architecture diagram: below and [docs/architecture.md](docs/architecture.md)
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph ui_layer [Interface]
+    UI[Live Run UI]
+  end
+  subgraph orch [Orchestration]
+    API[FastAPI + SSE]
+    PIPE[Case pipeline + audit ledger]
+  end
+  subgraph agents_layer [ADK Agents]
+    A1[Clinical Intake]
+    A2[Prior Authorization]
+    A3[Clinical Decision Support]
+  end
+  subgraph tools [MCP]
+    MCP[clinical MCP server]
+  end
+  UI --> API --> PIPE
+  PIPE --> A1 -->|A2A| A2 -->|A2A| A3 -->|HITL| UI
+  A1 & A2 & A3 --> MCP
+  A1 & A2 & A3 --> Gemini[Gemini AI Studio]
+  MCP --> Data[(data/ FHIR + policy)]
+```
+
+Full write-up: [`docs/architecture.md`](docs/architecture.md)
+
+---
+
+## Repository layout
+
+```
+agents/                  # Google ADK LlmAgents
+  clinical_intake/
+  prior_auth/
+  clinical_decision_support/
+mcp_servers/             # FastMCP tool servers
+  clinical/              # FHIR · RxNorm · policy · eligibility · guidelines
+agentthree/              # Orchestration backend (pipeline, API, audit, Gemini steps)
+web/                     # React Live Run FE (Vite) — watch agents in play
+ui/                      # Classic HTML Live Run
+data/                    # Demo FHIR patients + AHP-RAD-014 policy
+evaluation/              # Synthetic cases + metric scoring
+tests/                   # Unit / smoke tests
+docs/                    # Architecture and design notes
+scripts/run_demo.sh
+```
+
+---
+
+## Quick start (free tier)
+
+No Workspace Gemini license required. Use a [Google AI Studio](https://aistudio.google.com/apikey) free API key.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env               # set GOOGLE_API_KEY; DEMO_MODE=false for live Gemini
+
+# Terminal 1 — backend (MCP + API)
+.venv/bin/python -m agentthree
+
+# Terminal 2 — React FE (agents lighting up live)
+cd web && npm install && npm run dev
+```
+
+Open **http://127.0.0.1:5173** — one UI with:
+
+| Tab | What you show |
+|-----|----------------|
+| **Overview** | Architecture SVG (ADK · A2A · MCP · HITL · audit) |
+| **Live run** | Agents lighting up + MCP / A2A inspector |
+| **Engineering** | Capability cards |
+| **Build status** | What’s built vs deferred |
+
+Classic HTML remains at **http://127.0.0.1:8000/classic**.
+
+Optional: `cd web && npm run build` then restart the backend so `/` serves the React bundle.
+
+| Mode | Cost |
+|------|------|
+| Local MCP / API / UI | $0 |
+| Gemini AI Studio Free tier | $0 within rate limits |
+| `DEMO_MODE=true` | $0 (fixtures; MCP + A2A still real) |
+
+Keep `GOOGLE_GENAI_USE_VERTEXAI=FALSE` to stay off Vertex billing.
+
+---
+
+## Scenario
+
+Happy path: Jordan Rivera · CPT `72148` · ICD-10 `M54.16` · 6+ weeks PT · neurologic findings → recommend approval → human gate.
+
+Fault injection: MCP timeout, eligibility outage, missing policy, grounding failure.
+
+---
+
+## Develop next
+
+| Area | Folder | Next increments |
+|------|--------|-----------------|
+| Agents | `agents/` | Stronger structured output schemas; RemoteA2aAgent wiring |
+| MCP | `mcp_servers/` | Split FHIR / policy / eligibility into separate servers |
+| Evaluation | `evaluation/` | Expand golden cases; wire UI Evaluation tab to scored JSON |
+| Tests | `tests/` | Pipeline + MCP contract tests; CI |
+| Deploy | _(future)_ | Cloud Run / GKE — optional, not required for the demo |
+
+### Reproducible tests
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp -n .env.example .env   # DEMO_MODE=true for offline path
+
+.venv/bin/python -m pytest tests/ -q
+.venv/bin/python -m evaluation.run_eval
+```
+
+Expected: unit/smoke tests green; evaluation smoke scores the synthetic CPT 72148 case. For the full Live Run UI, follow Quick start above (backend + `web/` Vite app).

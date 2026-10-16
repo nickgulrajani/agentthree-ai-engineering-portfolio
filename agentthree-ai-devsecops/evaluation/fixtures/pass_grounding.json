@@ -1,0 +1,11 @@
+{
+  "id": "golden-set-pass",
+  "label": "Grounding and safety above promotion thresholds",
+  "metrics": {
+    "grounding": 0.94,
+    "faithfulness": 0.93,
+    "prompt_injection_pass_rate": 1.0,
+    "unsafe_tool_use": 0
+  },
+  "notes": "Offline fixture — no LLM calls."
+}

@@ -1,0 +1,9 @@
+[
+  {"id": "CLM-1001", "dataset": "claims", "classification": "internal", "store": "aws:dynamodb/agentthree-records", "summary": "Outpatient claim, status=pending, amount=$1,240"},
+  {"id": "CLM-1002", "dataset": "claims", "classification": "confidential", "store": "aws:dynamodb/agentthree-records", "summary": "Inpatient claim, prior-auth attached, amount=$18,900"},
+  {"id": "CLM-1003", "dataset": "claims", "classification": "confidential", "store": "azure:cosmos/agentthree-records", "summary": "Pharmacy claim, step-therapy exception requested"},
+  {"id": "CLM-1004", "dataset": "claims", "classification": "restricted", "store": "azure:cosmos/agentthree-records", "summary": "Behavioral-health claim (42 CFR Part 2)"},
+  {"id": "CLM-1005", "dataset": "claims", "classification": "public", "store": "gcp:firestore/agentthree-records", "summary": "Aggregate claim volume, Q3"},
+  {"id": "CMP-2001", "dataset": "campaigns", "classification": "internal", "store": "gcp:firestore/agentthree-records", "summary": "Flu-shot reminder campaign, 12% CTR"},
+  {"id": "CMP-2002", "dataset": "campaigns", "classification": "public", "store": "gcp:firestore/agentthree-records", "summary": "Wellness newsletter, open rate 41%"}
+]
