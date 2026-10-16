@@ -1,0 +1,38 @@
+{
+  "outcome_accuracy": 1.0,
+  "cases": 5,
+  "passed": 5,
+  "source": "evaluation/run_eval.py \u00b7 committed baseline",
+  "rows": [
+    {
+      "id": "meets-criteria",
+      "expected": "meets",
+      "actual": "meets",
+      "pass": true
+    },
+    {
+      "id": "missing-documentation",
+      "expected": "pend",
+      "actual": "pend",
+      "pass": true
+    },
+    {
+      "id": "red-flag-urgent",
+      "expected": "urgent",
+      "actual": "urgent",
+      "pass": true
+    },
+    {
+      "id": "meets-pt-words",
+      "expected": "meets",
+      "actual": "meets",
+      "pass": true
+    },
+    {
+      "id": "pend-prior-imaging",
+      "expected": "pend",
+      "actual": "pend",
+      "pass": true
+    }
+  ]
+}

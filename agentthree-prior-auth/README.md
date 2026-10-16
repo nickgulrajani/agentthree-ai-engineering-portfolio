@@ -132,8 +132,8 @@ Fault injection: MCP timeout, eligibility outage, missing policy, grounding fail
 |------|--------|-----------------|
 | Agents | `agents/` | Stronger structured output schemas; RemoteA2aAgent wiring |
 | MCP | `mcp_servers/` | Split FHIR / policy / eligibility into separate servers |
-| Evaluation | `evaluation/` | Expand golden cases; wire UI Evaluation tab to scored JSON |
-| Tests | `tests/` | Pipeline + MCP contract tests; CI |
+| Evaluation | `evaluation/` | Wire UI Evaluation tab to `published_results.json` |
+| Tests | `tests/` | Broader pipeline integration tests; CI badge |
 | Deploy | _(future)_ | Cloud Run / GKE — optional, not required for the demo |
 
 ### Reproducible tests
@@ -148,4 +148,4 @@ cp -n .env.example .env   # DEMO_MODE=true for offline path
 .venv/bin/python -m evaluation.run_eval
 ```
 
-Expected: unit/smoke tests green; evaluation smoke scores the synthetic CPT 72148 case. For the full Live Run UI, follow Quick start above (backend + `web/` Vite app).
+Expected: pytest green (domain, MCP contract, evaluation); `evaluation.run_eval` reports **100%** outcome accuracy on the five golden cases and writes `evaluation/last_results.json`. Committed baseline: [`evaluation/published_results.json`](evaluation/published_results.json). For the full Live Run UI, follow Quick start above (backend + `web/` Vite app).

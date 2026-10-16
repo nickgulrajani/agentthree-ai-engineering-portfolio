@@ -33,3 +33,25 @@ def test_audit_chain_links():
     assert a["prevHash"] == "0" * 64
     assert b["prevHash"] == a["hash"]
     assert a["hash"] != b["hash"]
+
+
+def test_pend_when_conservative_care_short():
+    note = (
+        "Patient reports low back pain for about 3 weeks after lifting boxes. "
+        "Taking naproxen 500 mg as needed. Exam notes tenderness over the lumbar "
+        "paraspinals, full strength in both legs."
+    )
+    x = extract_entities(note, "M54.50")
+    assert evaluate_policy(x)["outcome"] == "pend"
+    assert x["gaps"]
+
+
+def test_prior_mri_blocks_meets():
+    note = (
+        "58-year-old with low back pain radiating down the left leg for 9 weeks. "
+        "Completed 6 weeks of physical therapy (12 visits). Trialed naproxen 500 mg. "
+        "Exam: positive straight-leg raise on the left. Prior lumbar MRI last year."
+    )
+    x = extract_entities(note, "M54.16")
+    assert x["prior"]
+    assert evaluate_policy(x)["outcome"] == "pend"

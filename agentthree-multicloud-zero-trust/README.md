@@ -2,6 +2,8 @@
 
 [![Zero Trust Verify](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml)
 
+> **Requirement:** [OPA](https://www.openpolicyagent.org/docs/latest/#running-opa) must be installed (`brew install opa` or equivalent) before `make verify` / `opa test`. Policy-as-code gates will fail without it.
+
 <img src="docs/assets/logo.png" alt="AgentThree multi-cloud zero trust: AWS, Azure, GCP" width="320" align="right">
 
 A runnable security implementation for AI agents across AWS, Azure and GCP: workload identity, short-lived credentials, MCP authorization, agent-to-agent trust, policy-as-code, and allow/deny integration tests.

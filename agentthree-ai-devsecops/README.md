@@ -4,7 +4,7 @@ Zero-billing pipeline that turns the Azure DevOps CI/CD **simulator** into **rea
 
 **No cloud apply. No registry push. No LLM API calls in CI.**
 
-Companion storyboard: [`agentthree_azure_devops_multicloud_cicd_simulator_v2.html`](../agentthree-website/agentthree_azure_devops_multicloud_cicd_simulator_v2.html) in the website repo.
+Companion storyboard: [Azure DevOps multi-cloud CI/CD simulator](https://agentthree.ai/demos/agentthree_azure_devops_multicloud_cicd_simulator_v2.html).
 
 ---
 

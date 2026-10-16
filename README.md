@@ -6,13 +6,15 @@ Website: [agentthree.ai](https://agentthree.ai/)
 
 ## Projects in this repository
 
-| Project | Path | Description |
-|---------|------|-------------|
-| AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | CI/CD, security scanning, evaluation gates |
-| Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | Prior auth with ADK, MCP, A2A, Gemini, HITL |
-| Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | Hybrid search, ACLs, citations, grounding |
-| Confidential AI | [`agentthree-confidential-ai/`](./agentthree-confidential-ai) | Attestation, IAM, KMS, trusted workloads |
-| Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | Workload identity, MCP auth, OPA, A2A trust |
+| Project | Path | Description | Tests |
+|---------|------|-------------|------:|
+| Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | Prior auth with ADK, MCP, A2A, Gemini, HITL | 15 |
+| Confidential AI | [`agentthree-confidential-ai/`](./agentthree-confidential-ai) | Attestation, IAM, KMS, trusted workloads | 5 |
+| Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | Workload identity, MCP auth, OPA, A2A trust | 31 |
+| Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | Hybrid search, ACLs, citations, grounding | 7 |
+| AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | CI/CD, security scanning, evaluation gates | 14 |
+
+Test counts: pytest (and for Zero Trust, Rego + integration + Terraform mock-provider). Re-run each project's test target after cloning.
 
 ## Clone
 
