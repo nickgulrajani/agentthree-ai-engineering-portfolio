@@ -2,7 +2,7 @@
 
 [![Portfolio Verify](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)
 
-Monorepo portfolio of Agent Three AI engineering projects: agentic systems, enterprise RAG, confidential AI, DevSecOps, and multi-cloud zero trust.
+Monorepo portfolio of Agent Three AI engineering projects: agentic systems, enterprise RAG, agent evaluation, confidential AI, DevSecOps, and multi-cloud zero trust.
 
 Website: [agentthree.ai](https://agentthree.ai/)
 
@@ -31,8 +31,9 @@ Lab: [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agenti
 | Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | Workload identity, MCP auth, OPA, A2A trust | 31 (13 pytest + Rego + Terraform) |
 | Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | Hybrid search, ACLs, citations, grounding | 7 |
 | AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | CI/CD, security scanning, evaluation gates | 14 |
+| Agent Evaluation | [`agentthree-agent-eval/`](./agentthree-agent-eval) | 40-task suite, scorecard, regression gate | 7 |
 
-Test counts: pytest (and for Zero Trust, Rego + integration + Terraform mock-provider when those tools are installed).
+Test counts: pytest (and for Zero Trust, Rego + integration + Terraform mock-provider when those tools are installed). Agent Evaluation also runs a published A/B gate via `python -m evaluation.run_eval`.
 
 ## Verify everything
 
@@ -68,4 +69,5 @@ The same projects also exist as individual GitHub repositories for focused cloni
 
 ## Activity
 
+- **2026-10-17** — Added Agent Evaluation as sixth project (40-task suite + regression gate); clarified Zero Trust test count (13 pytest + Rego + Terraform).
 - **2026-10-17** — Portfolio verify CI live; OPA-missing tests skip cleanly; MIT LICENSE on all projects; Start here → prior-auth.

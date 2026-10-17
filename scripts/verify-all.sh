@@ -71,6 +71,15 @@ run "agentthree-ai-devsecops" bash -lc '
   .venv/bin/python -m pytest -q
 '
 
+# --- Agent Evaluation ---
+run "agentthree-agent-eval" bash -lc '
+  cd agentthree-agent-eval
+  python3 -m venv .venv
+  .venv/bin/pip install -q -e ".[dev]"
+  .venv/bin/python -m pytest -q
+  .venv/bin/python -m evaluation.run_eval
+'
+
 echo ""
 if [[ "$fail" -ne 0 ]]; then
   echo "✖ verify-all: one or more projects failed"
