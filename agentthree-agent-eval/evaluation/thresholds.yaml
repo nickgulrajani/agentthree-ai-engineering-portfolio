@@ -1,0 +1,5 @@
+# Regression gate for candidate B vs baseline A
+min_success: 0.70
+max_p95_latency: 16.0
+max_cost_per_task: 0.08
+max_category_regression: 0.05
