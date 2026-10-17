@@ -24,14 +24,14 @@ Lab: [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agenti
 
 ## Projects in this repository
 
-| Project | Path | Description | Tests |
-|---------|------|-------------|------:|
-| Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | Prior auth with ADK, MCP, A2A, Gemini, HITL | 15 |
-| Confidential AI | [`agentthree-confidential-ai/`](./agentthree-confidential-ai) | Attestation, IAM, KMS, trusted workloads | 8 |
-| Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | Workload identity, MCP auth, OPA, A2A trust | 31 (13 pytest + Rego + Terraform) |
-| Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | Hybrid search, ACLs, citations, grounding | 7 |
-| AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | CI/CD, security scanning, evaluation gates | 14 |
-| Agent Evaluation | [`agentthree-agent-eval/`](./agentthree-agent-eval) | 40-task suite, scorecard, regression gate | 7 |
+| Project | Path | Lab on agentthree.ai | Tests |
+|---------|------|----------------------|------:|
+| Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | [Prior Authorization](https://agentthree.ai/solutions/agentic-ai) | 15 |
+| Confidential AI | [`agentthree-confidential-ai/`](./agentthree-confidential-ai) | [Confidential Computing](https://agentthree.ai/solutions/confidential-computing) | 8 |
+| Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | [Multi-Cloud AI](https://agentthree.ai/solutions/multi-cloud-ai) | 31 (13 pytest + Rego + Terraform) |
+| Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | [RAG Engineering](https://agentthree.ai/ai-engineering-lab/rag-engineering) | 7 |
+| AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | [OPA Anomaly Lab](https://agentthree.ai/solutions/opa-anomaly-detection) | 14 |
+| Agent Evaluation | [`agentthree-agent-eval/`](./agentthree-agent-eval) | [Agent Evaluation](https://agentthree.ai/ai-engineering-lab/agent-evaluation) | 7 |
 
 Test counts: pytest (and for Zero Trust, Rego + integration + Terraform mock-provider when those tools are installed). Agent Evaluation also runs a published A/B gate via `python -m evaluation.run_eval`.
 
@@ -69,5 +69,5 @@ The same projects also exist as individual GitHub repositories for focused cloni
 
 ## Activity
 
-- **2026-10-17** — Added Agent Evaluation as sixth project (40-task suite + regression gate); clarified Zero Trust test count (13 pytest + Rego + Terraform).
+- **2026-10-17** — Homepage Featured Labs ↔ portfolio 1:1 (six labs / six projects); Agent Evaluation sixth project; Zero Trust test count clarified (13 pytest + Rego + Terraform).
 - **2026-10-17** — Portfolio verify CI live; OPA-missing tests skip cleanly; MIT LICENSE on all projects; Start here → prior-auth.
