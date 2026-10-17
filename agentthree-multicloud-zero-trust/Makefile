@@ -8,7 +8,10 @@ setup:
 	python3 -m venv .venv
 	.venv/bin/pip install -q -r requirements.txt
 	.venv/bin/pip install -q -e .
-	@command -v opa >/dev/null || (echo "Install OPA: brew install opa" && exit 1)
+	@command -v opa >/dev/null || ( \
+		echo "⚠ OPA not found — pytest will skip allow/deny tests until you install it:"; \
+		echo "  macOS:  brew install opa"; \
+		echo "  Linux:  curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static && chmod +x opa && sudo mv opa /usr/local/bin/opa")
 
 policy-test:
 	opa fmt --list --fail policy/ && opa test policy/ -v

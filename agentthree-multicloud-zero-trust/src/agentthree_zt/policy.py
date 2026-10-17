@@ -16,7 +16,14 @@ class OPA:
         self.policy_dir = str(policy_dir)
         self.binary = binary or shutil.which("opa")
         if not self.binary:
-            raise PolicyError("OPA binary not found. Install with: brew install opa")
+            raise PolicyError(
+                "OPA binary not found. Install then retry:\n"
+                "  macOS:  brew install opa\n"
+                "  Linux:  curl -L -o opa "
+                "https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static "
+                "&& chmod +x opa && sudo mv opa /usr/local/bin/opa\n"
+                "  Docs:   https://www.openpolicyagent.org/docs/latest/#running-opa"
+            )
 
     def decide(self, package: str, input_doc: dict) -> dict:
         proc = subprocess.run(

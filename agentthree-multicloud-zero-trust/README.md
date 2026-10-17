@@ -2,7 +2,12 @@
 
 [![Zero Trust Verify](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml)
 
-> **Requirement:** [OPA](https://www.openpolicyagent.org/docs/latest/#running-opa) must be installed (`brew install opa` or equivalent) before `make verify` / `opa test`. Policy-as-code gates will fail without it.
+> **Requirement:** [OPA](https://www.openpolicyagent.org/docs/latest/#running-opa) must be on your `PATH` before `make verify` / full integration tests.
+>
+> - **macOS:** `brew install opa`
+> - **Linux:** `curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static && chmod +x opa && sudo mv opa /usr/local/bin/opa`
+>
+> If OPA is missing, `pytest` **skips** the allow/deny suite with that install hint (no wall of red errors).
 
 <img src="docs/assets/logo.png" alt="AgentThree multi-cloud zero trust: AWS, Azure, GCP" width="320" align="right">
 
@@ -67,7 +72,7 @@ flowchart LR
 
 ## Quick start
 
-Prerequisites: Python 3.10+, OPA (`brew install opa`), and Terraform ≥ 1.7 (`brew install hashicorp/tap/terraform`), which is needed for mock-provider tests.
+Prerequisites: Python 3.10+, OPA (see install lines above), and Terraform ≥ 1.7 (`brew install hashicorp/tap/terraform` or [HashiCorp releases](https://developer.hashicorp.com/terraform/install)), which is needed for mock-provider tests.
 
 ```bash
 make setup        # venv + deps

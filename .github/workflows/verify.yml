@@ -1,0 +1,29 @@
+name: Portfolio Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# No cloud credentials. No terraform apply. Local / CI simulation only.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: All projects · pytest (+ OPA when available)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 0.64.1
+
+      - name: make verify
+        run: make verify
