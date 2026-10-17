@@ -28,7 +28,7 @@ Lab: [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agenti
 |---------|------|-------------|------:|
 | Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | Prior auth with ADK, MCP, A2A, Gemini, HITL | 15 |
 | Confidential AI | [`agentthree-confidential-ai/`](./agentthree-confidential-ai) | Attestation, IAM, KMS, trusted workloads | 8 |
-| Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | Workload identity, MCP auth, OPA, A2A trust | 31 |
+| Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | Workload identity, MCP auth, OPA, A2A trust | 31 (13 pytest + Rego + Terraform) |
 | Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | Hybrid search, ACLs, citations, grounding | 7 |
 | AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | CI/CD, security scanning, evaluation gates | 14 |
 
