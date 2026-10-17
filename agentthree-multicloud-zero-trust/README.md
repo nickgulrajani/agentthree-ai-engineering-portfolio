@@ -1,5 +1,9 @@
 # AgentThree · Multi-Cloud Zero Trust for AI Agents
 
+## Status
+
+**Last verified:** 2026-10-17 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+
 [![Zero Trust Verify](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml)
 
 > **Requirement:** [OPA](https://www.openpolicyagent.org/docs/latest/#running-opa) must be on your `PATH` before `make verify` / full integration tests.

@@ -65,3 +65,7 @@ Open any project folder for its README, architecture notes, implementation statu
 ## Standalone mirrors (optional)
 
 The same projects also exist as individual GitHub repositories for focused cloning. This portfolio repo is the canonical browsable collection.
+
+## Activity
+
+- **2026-10-17** — Portfolio verify CI live; OPA-missing tests skip cleanly; MIT LICENSE on all projects; Start here → prior-auth.

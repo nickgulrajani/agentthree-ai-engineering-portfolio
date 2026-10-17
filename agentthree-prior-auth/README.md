@@ -8,6 +8,11 @@ One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) 
 
 ---
 
+## Status
+
+**Last verified:** 2026-10-17 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+
+
 ## Implementation status
 
 | Area | Status | Notes |
