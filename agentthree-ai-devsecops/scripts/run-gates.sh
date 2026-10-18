@@ -83,7 +83,7 @@ if [[ "$SKIP_TRIVY" == "1" ]]; then
   echo "skipped (SKIP_TRIVY=1)"
 elif command -v trivy >/dev/null 2>&1; then
   mkdir -p artifacts
-  trivy fs --severity CRITICAL,HIGH --exit-code 0 --format table \
+  trivy fs --severity CRITICAL,HIGH --exit-code 1 --format table \
     --skip-dirs .venv --skip-dirs .git --skip-dirs .terraform \
     -o artifacts/trivy.txt .
   ok "Trivy scan complete (see artifacts/trivy.txt)"

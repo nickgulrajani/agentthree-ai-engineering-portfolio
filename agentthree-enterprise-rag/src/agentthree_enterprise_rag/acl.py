@@ -49,7 +49,10 @@ class AccessController:
 
     def may_read(self, principal: Principal, chunk: Chunk) -> bool:
         if self.defaults.get("require_clearance_at_least_doc_classification", True):
-            if self._rank(principal.clearance) < self._rank(chunk.classification):
+            # Unknown classifications fail closed (missing rank must not fail open).
+            if chunk.classification not in self.clearance_rank or self._rank(principal.clearance) < self._rank(
+                chunk.classification
+            ):
                 return False
         if chunk.allowed_departments and principal.department not in chunk.allowed_departments:
             return False

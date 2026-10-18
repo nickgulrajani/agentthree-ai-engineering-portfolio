@@ -161,6 +161,8 @@ async def decide(case_id: str, body: DecisionRequest) -> dict[str, Any]:
     case = CASES.get(case_id)
     if not case or "contextId" not in case:
         raise HTTPException(404, "Case not found or still running")
+    if case.get("decision"):
+        raise HTTPException(409, "Case already decided")
     labels = {
         "approve": ("Approved", "var(--lime)"),
         "info": ("Request more information", "var(--amber)"),

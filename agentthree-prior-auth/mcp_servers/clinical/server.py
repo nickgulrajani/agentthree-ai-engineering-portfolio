@@ -47,17 +47,26 @@ _RXNORM_LOCAL = {
     },
 }
 
-# Fault injection (set by API via env for a single run — process-local)
-_FAULT: str | None = os.getenv("MCP_FAULT")
+# Fault injection (process-local; configure via set_fault MCP tool or MCP_FAULT env)
+_FAULT: str | None = os.getenv("MCP_FAULT") or None
+if _FAULT in ("", "none"):
+    _FAULT = None
 _ELIG_FAILS = 0
 _POLICY_FAILS = 0
 
 
-def set_fault(fault: str | None) -> None:
+@mcp.tool()
+def set_fault(fault: str = "none") -> dict[str, Any]:
+    """Configure MCP fault injection for resilience drills.
+
+    Args:
+        fault: none | mcp_down | mcp_timeout | policy_missing
+    """
     global _FAULT, _ELIG_FAILS, _POLICY_FAILS
-    _FAULT = fault or None
+    _FAULT = None if not fault or fault == "none" else fault
     _ELIG_FAILS = 0
     _POLICY_FAILS = 0
+    return {"ok": True, "fault": _FAULT or "none"}
 
 
 @mcp.tool()

@@ -120,3 +120,34 @@ def test_audit_log_is_tamper_evident(env, tmp_path):
     tampered[-1]["decision"] = "allow"
     ok, bad_seq = verify_chain(tampered)
     assert not ok and bad_seq == tampered[-1]["seq"]
+
+
+def test_list_datasets_filtered_by_entitlement(env):
+    claims = env.agent("claims-agent")
+    cred = claims.credential(env.resource, "records:read")
+    r = claims.call_tool(cred.access_token, "list_datasets", {})
+    assert r.allowed and r.records == ["claims"]
+
+    marketing = env.agent("marketing-agent")
+    cred_m = marketing.credential(env.resource, "records:read")
+    r2 = marketing.call_tool(cred_m.access_token, "list_datasets", {})
+    assert r2.allowed and r2.records == ["campaigns"]
+
+
+def test_audit_log_resumes_chain_on_restart(tmp_path):
+    from agentthree_zt.agents import Environment
+
+    path = tmp_path / "audit.jsonl"
+    env1 = Environment(audit_path=path)
+    env1.agent("claims-agent").query("claims", "claims-adjudication")
+    n1 = len(env1.audit.entries)
+    assert n1 >= 1
+
+    env2 = Environment(audit_path=path)
+    assert len(env2.audit.entries) == n1
+    env2.agent("marketing-agent").query("claims", "claims-adjudication")
+    entries = load(path)
+    assert len(entries) > n1
+    assert verify_chain(entries) == (True, None)
+    assert entries[0]["seq"] == 1
+    assert entries[-1]["seq"] == len(entries)

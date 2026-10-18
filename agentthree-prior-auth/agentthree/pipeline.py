@@ -2,17 +2,34 @@
 
 from __future__ import annotations
 
+import asyncio
 import secrets
 import time
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Callable, Optional
 
+import httpx
+
 from agentthree.audit import AuditLedger
-from agentthree.config import DEMO_MODE, GEMINI_MODEL, GOOGLE_API_KEY
+from agentthree.config import (
+    CDS_A2A_PORT,
+    DEMO_MODE,
+    GEMINI_MODEL,
+    GOOGLE_API_KEY,
+    INTAKE_A2A_PORT,
+    PA_A2A_PORT,
+)
 from agentthree.gemini_steps import extract_with_gemini, match_with_gemini, synthesize_with_gemini
 from agentthree.mcp_client import call_tool, structured_from
 
 Emit = Callable[[dict[str, Any]], Any]
+
+# Recipient agent → local A2A JSON-RPC port (when START_A2A=true).
+_A2A_PORTS: dict[str, int] = {
+    "intake": INTAKE_A2A_PORT,
+    "pa": PA_A2A_PORT,
+    "cds": CDS_A2A_PORT,
+}
 
 
 def _rid(n: int = 6) -> str:
@@ -231,12 +248,27 @@ async def run_case(
             state=state,
             msg_seq=len(a2a) + 1,
         )
+        # POST to the running A2A server when the recipient exposes one.
+        port = _A2A_PORTS.get(to)
+        t0 = time.perf_counter()
+        if port:
+            try:
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    r = await client.post(f"http://127.0.0.1:{port}/", json=envelope["msg"])
+                if r.is_success:
+                    body = r.json()
+                    if isinstance(body, dict) and ("result" in body or "error" in body):
+                        envelope["resp"] = body
+            except Exception:  # noqa: BLE001
+                # Servers optional (START_A2A); keep local task envelope for the UI.
+                pass
+        live_dur = int((time.perf_counter() - t0) * 1000)
         a2a.append(envelope)
         await record(
             "a2a",
             frm,
             f"{frm} → {to}",
-            dur=dur,
+            dur=max(dur, live_dur),
             span=f"a2a.message/send → {to}",
             payload=envelope["msg"],
             detail=f"task state: {state}",
@@ -328,58 +360,66 @@ async def run_case(
         "working",
     )
 
-    # Eligibility with optional fault injection
+    # Drive MCP resilience drills through the server's set_fault() (real failures + sleeps).
+    mcp_fault = fault if fault in {"mcp_down", "mcp_timeout", "policy_missing"} else "none"
+    await mcp("pa", "fault-mcp", "set_fault", {"fault": mcp_fault})
+
+    # Eligibility — failures come from MCP when mcp_down is armed
     elig_ok = False
     elig_result = None
-    if fault == "mcp_down":
-        for attempt in range(1, 4):
-            await mcp(
-                "pa",
-                "eligibility-mcp",
-                "check_eligibility",
-                {
-                    "member": member,
-                    "serviceCode": cpt,
-                    "dateOfService": datetime.now(timezone.utc).date().isoformat(),
-                },
-                attempt=attempt,
-                inject_error={
-                    "dur": 180,
-                    "error": {"code": -32603, "message": "eligibility-mcp unavailable (HTTP 503 from upstream)"},
-                },
-            )
-            if attempt < 3:
-                back = 250 * (2 ** (attempt - 1))
-                await record(
-                    "retry",
-                    "pa",
-                    f"Retry check_eligibility after {back} ms backoff",
-                    dur=back,
-                    span=f"retry.backoff {back}ms",
-                    detail="exponential backoff · circuit preparing",
-                )
-        await record(
-            "err",
+    for attempt in range(1, 4):
+        elig_ok, elig_result, _ = await mcp(
             "pa",
-            "Circuit breaker opened for eligibility-mcp",
-            dur=20,
-            span="circuit.open eligibility-mcp",
-            detail="3 consecutive failures",
-        )
-        faults.append(
+            "eligibility-mcp",
+            "check_eligibility",
             {
-                "type": "mcp_down",
-                "component": "eligibility-mcp",
-                "handling": "3 attempts → circuit breaker → escalated to reviewer",
-                "recovered": False,
-                "escalated": True,
-            }
+                "member": member,
+                "serviceCode": cpt,
+                "dateOfService": datetime.now(timezone.utc).date().isoformat(),
+            },
+            attempt=attempt,
         )
+        if elig_ok:
+            break
+        if attempt < 3:
+            back = 250 * (2 ** (attempt - 1))
+            await asyncio.sleep(back / 1000)
+            await record(
+                "retry",
+                "pa",
+                f"Retry check_eligibility after {back} ms backoff",
+                dur=back,
+                span=f"retry.backoff {back}ms",
+                detail="exponential backoff · circuit preparing",
+            )
+
+    if not elig_ok:
+        if fault == "mcp_down":
+            await record(
+                "err",
+                "pa",
+                "Circuit breaker opened for eligibility-mcp",
+                dur=20,
+                span="circuit.open eligibility-mcp",
+                detail="3 consecutive failures",
+            )
+            faults.append(
+                {
+                    "type": "mcp_down",
+                    "component": "eligibility-mcp",
+                    "handling": "3 attempts → circuit breaker → escalated to reviewer",
+                    "recovered": False,
+                    "escalated": True,
+                }
+            )
+            reason = "Eligibility service unavailable after 3 attempts; coverage could not be confirmed."
+        else:
+            reason = "Eligibility service unavailable after retries."
         pol = {
             "crit": [],
             "outcome": "system",
             "policy": None,
-            "reason": "Eligibility service unavailable after 3 attempts; coverage could not be confirmed.",
+            "reason": reason,
         }
         agent_state["pa"] = "halted"
         agent_state["cds"] = "skipped"
@@ -400,84 +440,47 @@ async def run_case(
             }
         )
     else:
-        # Real MCP eligibility (may also fail if server injects)
-        for attempt in range(1, 4):
-            elig_ok, elig_result, _ = await mcp(
-                "pa",
-                "eligibility-mcp",
-                "check_eligibility",
-                {
-                    "member": member,
-                    "serviceCode": cpt,
-                    "dateOfService": datetime.now(timezone.utc).date().isoformat(),
-                },
-                attempt=attempt,
-            )
-            if elig_ok:
-                break
-            if attempt < 3:
+        # Policy search — empty hits / timeouts come from MCP when fault is armed
+        policy_hits = None
+        if fault == "mcp_timeout":
+            for attempt in range(1, 3):
+                ok_fail, _, _ = await mcp(
+                    "pa",
+                    "policy-mcp",
+                    "policy_search",
+                    {
+                        "query": "lumbar spine MRI 72148 coverage criteria",
+                        "payer": "AHP",
+                        "mode": "hybrid",
+                        "topK": 5,
+                    },
+                    attempt=attempt,
+                )
+                if ok_fail:
+                    break
                 back = 250 * (2 ** (attempt - 1))
-                await record("retry", "pa", f"Retry check_eligibility after {back} ms", dur=back)
-
-        if not elig_ok:
-            pol = {
-                "crit": [],
-                "outcome": "system",
-                "policy": None,
-                "reason": "Eligibility service unavailable after retries.",
-            }
-            agent_state["pa"] = "halted"
-            agent_state["cds"] = "skipped"
-            await send_a2a("pa", "human", "Eligibility unavailable.", {"reason": pol["reason"]}, "input-required")
-            await _emit({"type": "halt", "pol": pol, "faults": faults, "agentState": dict(agent_state), "awaitingHuman": True})
-        elif fault == "policy_missing":
-            empty = {
-                "hits": [],
-                "message": "No active policy indexed for payer AHP + CPT 72148",
-            }
-            tools.append(
+                await asyncio.sleep(back / 1000)
+                await record("retry", "pa", f"Retry policy_search after {back} ms", dur=back)
+            faults.append(
                 {
-                    "agent": "pa",
-                    "server": "policy-mcp",
-                    "tool": "policy_search",
-                    "attempt": 1,
-                    "error": False,
-                    "req": {
-                        "jsonrpc": "2.0",
-                        "id": len(tools) + 1,
-                        "method": "tools/call",
-                        "params": {
-                            "name": "policy_search",
-                            "arguments": {
-                                "query": "lumbar spine MRI 72148 coverage criteria",
-                                "payer": "AHP",
-                                "mode": "hybrid",
-                                "topK": 5,
-                            },
-                        },
-                    },
-                    "res": {
-                        "jsonrpc": "2.0",
-                        "id": len(tools) + 1,
-                        "result": {
-                            "content": [{"type": "text", "text": "(structured result below)"}],
-                            "structuredContent": empty,
-                            "isError": False,
-                        },
-                    },
-                    "dur": 120,
+                    "type": "mcp_timeout",
+                    "component": "policy-mcp",
+                    "handling": "2 timeouts → retry → succeed",
+                    "recovered": True,
+                    "escalated": False,
                 }
             )
-            await _emit({"type": "tool", "tool": tools[-1]})
-            await record(
-                "mcp",
-                "pa",
-                "policy-mcp · policy_search",
-                dur=120,
-                span="mcp.policy_search",
-                payload={"result": empty},
-                detail="hits=0",
-            )
+
+        ok_p, policy_hits, _ = await mcp(
+            "pa",
+            "policy-mcp",
+            "policy_search",
+            {"query": "lumbar spine MRI 72148 coverage criteria", "payer": "AHP", "mode": "hybrid", "topK": 5},
+            attempt=3 if fault == "mcp_timeout" else 1,
+        )
+
+        hits = (policy_hits or {}).get("hits") if isinstance(policy_hits, dict) else None
+        if fault == "policy_missing" or (ok_p and isinstance(hits, list) and len(hits) == 0):
             await record(
                 "guard",
                 "pa",
@@ -506,45 +509,6 @@ async def run_case(
             await send_a2a("pa", "human", "Policy not found.", {"reason": pol["reason"]}, "input-required")
             await _emit({"type": "halt", "pol": pol, "faults": faults, "agentState": dict(agent_state), "awaitingHuman": True})
         else:
-            # policy search with optional timeout retries
-            policy_hits = None
-            if fault == "mcp_timeout":
-                for attempt in range(1, 3):
-                    await mcp(
-                        "pa",
-                        "policy-mcp",
-                        "policy_search",
-                        {
-                            "query": "lumbar spine MRI 72148 coverage criteria",
-                            "payer": "AHP",
-                            "mode": "hybrid",
-                            "topK": 5,
-                        },
-                        attempt=attempt,
-                        inject_error={
-                            "dur": 900,
-                            "error": {"code": -32001, "message": "Request timed out after 5000 ms"},
-                        },
-                    )
-                    back = 250 * (2 ** (attempt - 1))
-                    await record("retry", "pa", f"Retry policy_search after {back} ms", dur=back)
-                faults.append(
-                    {
-                        "type": "mcp_timeout",
-                        "component": "policy-mcp",
-                        "handling": "2 timeouts → retry → succeed",
-                        "recovered": True,
-                        "escalated": False,
-                    }
-                )
-
-            ok_p, policy_hits, _ = await mcp(
-                "pa",
-                "policy-mcp",
-                "policy_search",
-                {"query": "lumbar spine MRI 72148 coverage criteria", "payer": "AHP", "mode": "hybrid", "topK": 5},
-                attempt=3 if fault == "mcp_timeout" else 1,
-            )
             pol, dur, tok = await match_with_gemini(x, policy_hits if ok_p else {})
             await record(
                 "llm",
@@ -599,8 +563,9 @@ async def run_case(
                     "Grounding check failed · unsupported claim blocked",
                     dur=90,
                     span="guardrail.grounding ✗",
-                    detail='Blocked uncited claim; regenerating with citation constraint',
+                    detail="Blocked uncited claim; regenerating with citation constraint",
                 )
+                await asyncio.sleep(0.04)
                 await record(
                     "retry",
                     "cds",
@@ -657,6 +622,12 @@ async def run_case(
                     "awaitingHuman": True,
                 }
             )
+
+    # Clear MCP fault injection so the next case starts clean.
+    try:
+        await call_tool("set_fault", {"fault": "none"})
+    except Exception:  # noqa: BLE001
+        pass
 
     agent_state["human"] = "waiting"
     result = {

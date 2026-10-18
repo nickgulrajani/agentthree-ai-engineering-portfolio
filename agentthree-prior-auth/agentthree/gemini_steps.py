@@ -26,11 +26,11 @@ async def _generate(prompt: str) -> tuple[dict[str, Any], int, int]:
         raise RuntimeError("Gemini live call unavailable (DEMO_MODE or missing GOOGLE_API_KEY)")
 
     t0 = time.perf_counter()
-    # google-genai is pulled in by google-adk
+    # google-genai is pulled in by google-adk — use the async client
     from google import genai
 
     client = genai.Client(api_key=GOOGLE_API_KEY)
-    response = client.models.generate_content(
+    response = await client.aio.models.generate_content(
         model=GEMINI_MODEL,
         contents=prompt,
         config={
@@ -126,9 +126,12 @@ Case:
     try:
         data, dur, tokens = await _generate(prompt)
         recs = data.get("recs") or fallback["recs"]
-        # Grounding guardrail
-        bad = [r for r in recs if not r.get("cite") or not all(c in allowed or True for c in r.get("cite", []))]
-        # Soft check: prefer allowed ids; drop unknown cites when possible
+        # Grounding guardrail: every cite must be in the allowed guideline id set.
+        bad = [
+            r
+            for r in recs
+            if not r.get("cite") or not all(c in allowed for c in r.get("cite", []))
+        ]
         cleaned = []
         for r in recs:
             cites = [c for c in (r.get("cite") or []) if (not allowed) or c in allowed]
@@ -137,7 +140,11 @@ Case:
             cleaned.append({**r, "cite": cites})
         if not cleaned:
             return fallback, dur, tokens
-        grounding = {"claims": len(cleaned), "cited": len(cleaned), "unsupported": 0}
+        grounding = {
+            "claims": len(recs),
+            "cited": len(cleaned),
+            "unsupported": len(bad),
+        }
         return {"recs": cleaned, "risks": data.get("risks") or fallback["risks"], "grounding": grounding}, dur, tokens
     except Exception:  # noqa: BLE001
         return fallback, 40, 0

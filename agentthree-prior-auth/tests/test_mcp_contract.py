@@ -35,3 +35,14 @@ def test_eligibility_happy_path():
         dateOfService="2026-01-15",
     )
     assert "error" not in out
+
+
+def test_set_fault_drives_policy_missing_and_clears():
+    armed = clinical.set_fault("policy_missing")
+    assert armed["fault"] == "policy_missing"
+    empty = clinical.policy_search(query="lumbar MRI CPT 72148")
+    assert empty.get("hits") == []
+    cleared = clinical.set_fault("none")
+    assert cleared["fault"] == "none"
+    restored = clinical.policy_search(query="lumbar MRI CPT 72148")
+    assert restored.get("hits")

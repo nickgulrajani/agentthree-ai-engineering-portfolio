@@ -69,8 +69,16 @@ permitted_classifications contains c if {
 	rank <= ents.classification_rank[agent.max_classification]
 }
 
+default permitted_datasets := []
+
+permitted_datasets := agent.datasets if {
+	allow
+	agent != null
+}
+
 decision := {
 	"allow": allow,
 	"reasons": deny,
 	"permitted_classifications": permitted_classifications,
+	"permitted_datasets": permitted_datasets,
 }

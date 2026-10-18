@@ -55,6 +55,26 @@ def test_bob_cannot_read_hr_confidential():
     assert not any(c.doc_id == "POL-HR-001" for c in result.citations)
 
 
+def test_unknown_classification_fails_closed():
+    from agentthree_enterprise_rag.acl import AccessController
+    from agentthree_enterprise_rag.ingest import Chunk
+
+    acl = AccessController(ACL)
+    alice = acl.get_principal("alice_hr")
+    chunk = Chunk(
+        chunk_id="x-1",
+        doc_id="POL-X",
+        title="X",
+        text="secret",
+        classification="top-secret-unknown",
+        allowed_departments=["hr"],
+        allowed_roles=[],
+        source="x.md",
+        section="1",
+    )
+    assert not acl.may_read(alice, chunk)
+
+
 def test_refuses_when_no_evidence():
     result = _agent().ask(
         "alice_hr",

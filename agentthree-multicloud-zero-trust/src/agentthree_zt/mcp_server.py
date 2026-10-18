@@ -106,7 +106,8 @@ def create_app(broker: TokenBroker, opa: OPA, audit: AuditLog, resource: str, re
 
         allowed = set(decision["permitted_classifications"])
         if tool == "list_datasets":
-            payload = sorted({r["dataset"] for r in records})
+            entitled = set(decision.get("permitted_datasets") or [])
+            payload = sorted({r["dataset"] for r in records if r["dataset"] in entitled})
             audit.record("mcp", f"tools/call:{tool}", who, "allow", **extra)
         else:
             in_ds = [r for r in records if r["dataset"] == args["dataset"]]

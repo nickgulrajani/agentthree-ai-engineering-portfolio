@@ -19,7 +19,7 @@ on:
       approve_prod:
         description: "Set true to satisfy PROD approval gate"
         required: true
-        default: "true"
+        default: "false"
         type: choice
         options: ["true", "false"]
 
@@ -107,7 +107,7 @@ jobs:
           scan-type: fs
           scan-ref: .
           severity: CRITICAL,HIGH
-          exit-code: "0"
+          exit-code: "1"
           format: table
           skip-dirs: .git,.venv,.terraform
 
@@ -128,7 +128,7 @@ jobs:
           pip install -e .
       - name: Production approval flag
         run: |
-          APPROVE="${{ github.event.inputs.approve_prod || 'true' }}"
+          APPROVE="${{ github.event.inputs.approve_prod || 'false' }}"
           echo "PROD_APPROVED=$APPROVE" >> "$GITHUB_ENV"
       - name: Deploy dry-run
         run: python -m agentthree_devsecops.deploy_dry_run --target prod --require-approval

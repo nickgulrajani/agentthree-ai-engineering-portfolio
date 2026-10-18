@@ -19,7 +19,11 @@ class AuditLog:
         self.entries: list[dict] = []
         if path:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("")
+            # Append + resume: never truncate an existing hash chain on startup.
+            if path.exists() and path.stat().st_size > 0:
+                self.entries = load(path)
+            else:
+                path.touch(exist_ok=True)
 
     def record(self, component: str, action: str, principal: str, decision: str, **details) -> dict:
         prev = self.entries[-1]["hash"] if self.entries else GENESIS
