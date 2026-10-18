@@ -4,6 +4,8 @@
 
 An attested TEE workload receives permission to decrypt sensitive data. An untrusted workload is denied. IAM, KMS, and audit trails enforce and record the decision.
 
+Companion browser lab: [Confidential Computing & Trusted AI](https://agentthree.ai/solutions/confidential-computing)
+
 > **Non-billable portfolio demo.** Run everything locally with zero cloud cost. GCP Confidential Space / Confidential GKE are the primary *documented* production path; AWS Nitro Enclaves and Azure Confidential Computing are comparison architectures. Optional Terraform is scaffolding only — not required for the demo.
 
 ---

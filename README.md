@@ -65,12 +65,22 @@ Open any project folder for its README, architecture notes, implementation statu
 
 ## Standalone mirrors (optional)
 
-The same projects also exist as individual GitHub repositories for focused cloning. This portfolio repo is the canonical browsable collection.
+The same projects also exist as individual GitHub repositories for focused cloning. This portfolio repo is the canonical browsable collection—and matches the six Featured Labs on [agentthree.ai](https://agentthree.ai/).
+
+| Project | Standalone repo |
+|---------|-----------------|
+| Healthcare Multi-Agent AI | [agentthree-prior-auth](https://github.com/nickgulrajani/agentthree-prior-auth) |
+| Confidential AI | [agentthree-confidential-ai](https://github.com/nickgulrajani/agentthree-confidential-ai) |
+| Multi-Cloud Zero Trust | [agentthree-multicloud-zero-trust](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust) |
+| Enterprise RAG | [agentthree-enterprise-rag](https://github.com/nickgulrajani/agentthree-enterprise-rag) |
+| AI DevSecOps & Governance | [agentthree-ai-devsecops](https://github.com/nickgulrajani/agentthree-ai-devsecops) |
+| Agent Evaluation | [agentthree-agent-eval](https://github.com/nickgulrajani/agentthree-agent-eval) |
 
 ## Activity
 
 Daily changelog for this monorepo (newest first). Each day work lands, add a dated bullet here.
 
+- **2026-10-18** — Homepage / site references re-synced to portfolio table (test counts, Start here 21 pytest + 5/5 eval, standalone mirror links); Azure Zero Trust demo Use Case tab for parity with AWS/GCP.
 - **2026-10-18** — Fix demo CDS regression: citation allow-list from guideline **and** policy hits + POL-AHP corpus ids; no-fault cases assert `unsupported == 0`; `set -euo pipefail` on every `verify-all` project block so failing pytest cannot be masked by a later command. Prior-auth pytest 21.
 - **2026-10-18** — CI/drill follow-ups: `opa test` no longer uses invalid `-q` (Rego suite fails closed in `verify-all`); DevSecOps deploy dry-run only on `workflow_dispatch` so push/PR stays green with approval default false; prior-auth `grounding_fail` injects a real uncited claim before the citation filter. Prior-auth pytest 18.
 - **2026-10-18** — Closed flagship caveats: prior-auth real A2A POSTs + MCP `set_fault` drills + async Gemini + decision `409`; RAG unknown classifications fail closed; Zero Trust audit append/resume + `list_datasets` entitlement filter; DevSecOps Trivy exit-code `1` + prod approval default `false`. Test counts: prior-auth 16 · RAG 8 · Zero Trust 33 (15 pytest + Rego + Terraform).

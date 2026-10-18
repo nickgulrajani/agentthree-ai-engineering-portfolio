@@ -3,6 +3,7 @@
 One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) using **Google ADK**, **A2A**, **MCP**, and **Gemini**, connected to a Live Run UI.
 
 **Repo:** [nickgulrajani/agentthree-prior-auth](https://github.com/nickgulrajani/agentthree-prior-auth)
+**Lab:** [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agentic-ai)
 
 > Fictional patients, payer, and policy — **not for clinical use**.
 

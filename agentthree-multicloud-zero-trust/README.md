@@ -17,6 +17,8 @@
 
 A runnable security implementation for AI agents across AWS, Azure and GCP: workload identity, short-lived credentials, MCP authorization, agent-to-agent trust, policy-as-code, and allow/deny integration tests.
 
+Companion browser labs: [Multi-Cloud AI Architecture](https://agentthree.ai/solutions/multi-cloud-ai) (placement + AWS/Azure/GCP Zero Trust demos + Azure DevOps CI/CD simulator).
+
 **$0 cloud spend.** The demo needs no cloud accounts, credentials or LLM API keys, and nothing is ever applied to a cloud.
 
 **Business results:** faster breach detection · audit-ready architecture · lower cyber-insurance premiums
