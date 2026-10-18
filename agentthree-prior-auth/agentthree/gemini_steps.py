@@ -106,15 +106,73 @@ Reference structure:
         return fallback, 40, 0
 
 
+_UNCITED_DRILL = {
+    "t": "Injected unsupported claim for grounding drill (no allowed citation).",
+    "conf": 0.99,
+    "cite": ["UNCITED-DRILL-999"],
+}
+
+
+def apply_citation_filter(
+    recs: list[dict[str, Any]],
+    allowed: list[str],
+    *,
+    inject_uncited: bool = False,
+) -> tuple[list[dict[str, Any]], dict[str, int], list[dict[str, Any]]]:
+    """Filter recs to allowed cites. Optionally inject an uncited claim before filtering.
+
+    Returns (cleaned_recs, grounding, blocked_recs).
+    """
+    working = list(recs)
+    if inject_uncited:
+        working.append(dict(_UNCITED_DRILL))
+    bad = [
+        r
+        for r in working
+        if not r.get("cite") or not all(c in allowed for c in r.get("cite", []))
+    ]
+    cleaned: list[dict[str, Any]] = []
+    for r in working:
+        cites = [c for c in (r.get("cite") or []) if (not allowed) or c in allowed]
+        if not cites:
+            continue
+        cleaned.append({**r, "cite": cites})
+    grounding = {
+        "claims": len(working),
+        "cited": len(cleaned),
+        "unsupported": len(bad),
+    }
+    return cleaned, grounding, bad
+
+
 async def synthesize_with_gemini(
     x: dict[str, Any],
     pol: dict[str, Any],
     guidelines: dict[str, Any],
+    *,
+    inject_uncited: bool = False,
 ) -> tuple[dict[str, Any], int, int]:
     fallback = cds_evaluate(x, pol)
-    if DEMO_MODE or not GOOGLE_API_KEY:
-        return fallback, 40, 0
     allowed = [h.get("id") for h in (guidelines.get("hits") or []) if h.get("id")]
+    # When allowed is empty (demo guidelines missing), treat fallback cites as the allow-list
+    # so inject_uncited still produces a real unsupported hit.
+    if not allowed:
+        allowed = [c for r in (fallback.get("recs") or []) for c in (r.get("cite") or [])]
+
+    if DEMO_MODE or not GOOGLE_API_KEY:
+        cleaned, grounding, _bad = apply_citation_filter(
+            list(fallback.get("recs") or []),
+            allowed,
+            inject_uncited=inject_uncited,
+        )
+        if not cleaned:
+            return {**fallback, "grounding": grounding}, 40, 0
+        return {
+            "recs": cleaned,
+            "risks": fallback.get("risks") or [],
+            "grounding": grounding,
+        }, 40, 0
+
     prompt = f"""Synthesize cited clinical decision support for a human reviewer.
 Return ONLY JSON: recs (t, conf 0-1, cite[]), risks[], grounding {{claims, cited, unsupported}}.
 Every cite MUST be from this allowed set: {allowed}
@@ -126,25 +184,26 @@ Case:
     try:
         data, dur, tokens = await _generate(prompt)
         recs = data.get("recs") or fallback["recs"]
-        # Grounding guardrail: every cite must be in the allowed guideline id set.
-        bad = [
-            r
-            for r in recs
-            if not r.get("cite") or not all(c in allowed for c in r.get("cite", []))
-        ]
-        cleaned = []
-        for r in recs:
-            cites = [c for c in (r.get("cite") or []) if (not allowed) or c in allowed]
-            if not cites:
-                continue
-            cleaned.append({**r, "cite": cites})
+        cleaned, grounding, _bad = apply_citation_filter(
+            recs, allowed, inject_uncited=inject_uncited
+        )
         if not cleaned:
             return fallback, dur, tokens
-        grounding = {
-            "claims": len(recs),
-            "cited": len(cleaned),
-            "unsupported": len(bad),
-        }
-        return {"recs": cleaned, "risks": data.get("risks") or fallback["risks"], "grounding": grounding}, dur, tokens
+        return {
+            "recs": cleaned,
+            "risks": data.get("risks") or fallback["risks"],
+            "grounding": grounding,
+        }, dur, tokens
     except Exception:  # noqa: BLE001
-        return fallback, 40, 0
+        cleaned, grounding, _bad = apply_citation_filter(
+            list(fallback.get("recs") or []),
+            allowed,
+            inject_uncited=inject_uncited,
+        )
+        if not cleaned:
+            return {**fallback, "grounding": grounding}, 40, 0
+        return {
+            "recs": cleaned,
+            "risks": fallback.get("risks") or [],
+            "grounding": grounding,
+        }, 40, 0

@@ -48,8 +48,8 @@ Expect: deploy dry-run succeeds, health fails at 8.1% error rate, `artifacts/rol
 
 ## Optional: GitHub Actions
 
-- Push to GitHub (public repo = free Actions minutes).
-- **Actions → AI DevSecOps Pipeline → Run workflow**
+- Push / PR runs quality · IaC · evaluation · Trivy (no deploy gate — approval defaults to false).
+- **Actions → AI DevSecOps Pipeline → Run workflow** to exercise deploy dry-run + health/rollback.
 - Choose scenario: `pass` / `fail-checkov` / `fail-eval` / `fail-health`
 - Set **`approve_prod=true`** when you want the deploy dry-run to pass (default is `false` — the approval gate blocks).
 

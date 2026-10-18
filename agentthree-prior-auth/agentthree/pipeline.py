@@ -556,14 +556,31 @@ async def run_case(
                 {"query": q, "sources": ["ACR AC", "ACP"], "mode": "vector+graph", "topK": 4},
             )
 
+            guide_payload = guidelines if ok_g else {"hits": []}
             if fault == "grounding_fail":
+                # Real drill: inject an uncited claim before the citation filter, then regenerate.
+                draft, dur_bad, tok_bad = await synthesize_with_gemini(
+                    x, pol, guide_payload, inject_uncited=True
+                )
+                unsupported = int((draft.get("grounding") or {}).get("unsupported") or 0)
+                await record(
+                    "llm",
+                    "cds",
+                    f"Gemini · synthesize_evidence ({mode}) · uncited inject",
+                    dur=dur_bad,
+                    span="llm.generate synthesize_evidence ✗",
+                    payload=draft,
+                    add_tokens=tok_bad,
+                    detail=f"unsupported={unsupported}",
+                )
                 await record(
                     "err",
                     "cds",
                     "Grounding check failed · unsupported claim blocked",
                     dur=90,
                     span="guardrail.grounding ✗",
-                    detail="Blocked uncited claim; regenerating with citation constraint",
+                    payload=draft.get("grounding"),
+                    detail=f"Blocked {unsupported} uncited claim(s); regenerating with citation constraint",
                 )
                 await asyncio.sleep(0.04)
                 await record(
@@ -577,13 +594,16 @@ async def run_case(
                     {
                         "type": "grounding_fail",
                         "component": "cds agent",
-                        "handling": "Uncited claim blocked → regenerated → passed",
+                        "handling": "Uncited claim injected → filter blocked → regenerated → passed",
                         "recovered": True,
                         "escalated": False,
+                        "unsupported": unsupported,
                     }
                 )
 
-            cds, dur, tok = await synthesize_with_gemini(x, pol, guidelines if ok_g else {"hits": []})
+            cds, dur, tok = await synthesize_with_gemini(
+                x, pol, guide_payload, inject_uncited=False
+            )
             await record(
                 "llm",
                 "cds",

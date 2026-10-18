@@ -42,12 +42,14 @@ run "agentthree-confidential-ai" bash -lc '
 
 # --- Multi-Cloud Zero Trust (skips if OPA missing) ---
 run "agentthree-multicloud-zero-trust" bash -lc '
+  set -euo pipefail
   cd agentthree-multicloud-zero-trust
   python3 -m venv .venv
   .venv/bin/pip install -q -r requirements.txt
   .venv/bin/pip install -q -e .
   if command -v opa >/dev/null 2>&1; then
-    opa test policy/ -q
+    # opa has no -q flag; a bad flag used to error while the subshell still exited 0.
+    opa test policy/
   else
     echo "OPA not on PATH — skipping Rego suite (pytest will skip integration tests)."
   fi

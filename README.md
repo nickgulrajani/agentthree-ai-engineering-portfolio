@@ -10,7 +10,7 @@ Website: [agentthree.ai](https://agentthree.ai/)
 
 **Flagship project:** [Healthcare Multi-Agent Prior Authorization](./agentthree-prior-auth/) (`agentthree-prior-auth/`)
 
-Open that folder first — ADK · MCP · A2A · Gemini · human-in-the-loop, with a Live Run UI, published evaluation results (5/5 outcome accuracy), and 16 pytest cases. Then browse the rest.
+Open that folder first — ADK · MCP · A2A · Gemini · human-in-the-loop, with a Live Run UI, published evaluation results (5/5 outcome accuracy), and 18 pytest cases. Then browse the rest.
 
 ```bash
 cd agentthree-prior-auth
@@ -26,7 +26,7 @@ Lab: [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agenti
 
 | Project | Path | Lab on agentthree.ai | Tests |
 |---------|------|----------------------|------:|
-| Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | [Prior Authorization](https://agentthree.ai/solutions/agentic-ai) | 16 |
+| Healthcare Multi-Agent AI | [`agentthree-prior-auth/`](./agentthree-prior-auth) | [Prior Authorization](https://agentthree.ai/solutions/agentic-ai) | 18 |
 | Confidential AI | [`agentthree-confidential-ai/`](./agentthree-confidential-ai) | [Confidential Computing](https://agentthree.ai/solutions/confidential-computing) | 8 |
 | Multi-Cloud Zero Trust | [`agentthree-multicloud-zero-trust/`](./agentthree-multicloud-zero-trust) | [Multi-Cloud AI](https://agentthree.ai/solutions/multi-cloud-ai) | 33 (15 pytest + Rego + Terraform) |
 | Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | [RAG Engineering](https://agentthree.ai/ai-engineering-lab/rag-engineering) | 8 |
@@ -71,6 +71,7 @@ The same projects also exist as individual GitHub repositories for focused cloni
 
 Daily changelog for this monorepo (newest first). Each day work lands, add a dated bullet here.
 
+- **2026-10-18** — CI/drill follow-ups: `opa test` no longer uses invalid `-q` (Rego suite fails closed in `verify-all`); DevSecOps deploy dry-run only on `workflow_dispatch` so push/PR stays green with approval default false; prior-auth `grounding_fail` injects a real uncited claim before the citation filter. Prior-auth pytest 18.
 - **2026-10-18** — Closed flagship caveats: prior-auth real A2A POSTs + MCP `set_fault` drills + async Gemini + decision `409`; RAG unknown classifications fail closed; Zero Trust audit append/resume + `list_datasets` entitlement filter; DevSecOps Trivy exit-code `1` + prod approval default `false`. Test counts: prior-auth 16 · RAG 8 · Zero Trust 33 (15 pytest + Rego + Terraform).
 - **2026-10-17** — Homepage Featured Labs ↔ portfolio 1:1 (six labs / six projects); Agent Evaluation sixth project; Zero Trust test count clarified (13 pytest + Rego + Terraform).
 - **2026-10-17** — Portfolio verify CI live; OPA-missing tests skip cleanly; MIT LICENSE on all projects; Start here → prior-auth.

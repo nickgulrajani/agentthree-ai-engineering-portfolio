@@ -21,7 +21,7 @@ Companion storyboard: [Azure DevOps multi-cloud CI/CD simulator](https://agentth
 | Terraform | **Validate only** | `fmt` + `validate` — never `apply` |
 | Container scan (Trivy) | **Implemented (filesystem scan)** | Exit code `1` on CRITICAL/HIGH — gate fails closed; no registry push |
 | Deploy / rollback | **Simulated dry-run** | Manifests + health → rollback procedure; no AKS/GKE/EKS |
-| Approvals | **Fail-closed by default** | `approve_prod` / `PROD_APPROVED` default **false**; optional GitHub Environment reviewers |
+| Approvals | **Fail-closed by default** | `approve_prod` / `PROD_APPROVED` default **false**; deploy dry-run job runs on `workflow_dispatch` only (not push/PR) |
 | Cloud infrastructure | **Not deployed** | Simulator mapping only — see [docs/architecture.md](docs/architecture.md) |
 
 **Simulated vs cloud:** Security and evaluation *gates* are real and reproducible. Cloud *deployments* are intentionally simulated so the demo stays at $0.
