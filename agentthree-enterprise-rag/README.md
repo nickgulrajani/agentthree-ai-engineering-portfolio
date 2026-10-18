@@ -12,7 +12,7 @@ Companion browser lab: [RAG Engineering · Module 04](https://agentthree.ai/ai-e
 
 ## Status
 
-**Last verified:** 2026-10-17 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
 
 
 ## Implementation status
@@ -20,10 +20,10 @@ Companion browser lab: [RAG Engineering · Module 04](https://agentthree.ai/ai-e
 | Area | Status | Notes |
 |------|--------|-------|
 | Ingest / chunk / hybrid retrieve (vector + BM25 + RRF) | **Implemented (local)** | Deterministic hashing embeddings — no model download |
-| ACL filter (clearance · dept · roles) | **Implemented (local)** | Fail-closed after retrieve |
+| ACL filter (clearance · dept · roles) | **Implemented (local)** | Fail-closed after retrieve; **unknown classifications deny** (no fail-open on missing rank) |
 | Grounded answers + citations | **Implemented (local)** | Extractive sentences from authorized chunks |
 | Refuse-to-fabricate | **Implemented (local)** | Score + lexical overlap gates |
-| Offline RAG evaluation | **Implemented** | YAML fixtures + `pytest` / `agentthree-rag eval` |
+| Offline RAG evaluation | **Implemented** | YAML fixtures + `pytest` / `agentthree-rag eval` (8 pytest cases) |
 | Managed vector DB / cloud search | **Not deployed** | Documented analogues only (OpenSearch, Azure AI Search, Vertex) |
 | Hosted LLM grounding | **Not deployed** | Local extractive grounder simulates citation/abstain policy |
 
@@ -114,7 +114,7 @@ Expected: pytest green; offline eval reports **100%** on faithfulness / citation
 
 ## Design principles
 
-1. **Fail closed** — insufficient authorized evidence ⇒ refusal, never invented policy.
+1. **Fail closed** — insufficient authorized evidence ⇒ refusal, never invented policy; unknown doc classifications are denied.
 2. **Citations are mandatory** on every answered claim.
 3. **ACL after retrieve** — denials are explicit and testable.
 4. **Honest scope** — local hashing/BM25 simulate enterprise search; production analogues are documented, not pretended.

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Last verified:** 2026-10-17 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
 
 [![Zero Trust Verify](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-multicloud-zero-trust/actions/workflows/zero-trust.yml)
 
@@ -37,6 +37,8 @@ A runnable security implementation for AI agents across AWS, Azure and GCP: work
 | 6 | Forged token from an attacker-run OIDC issuer | **DENY** | Broker signature check |
 | 7 | Token replayed after its 300 s TTL | **DENY 401** | Short-lived credential |
 | — | Someone flips a `deny` to `allow` in the audit log | **Detected** | SHA-256 hash chain |
+| — | `list_datasets` for `claims-agent` / `marketing-agent` | **Filtered** to entitled datasets only | OPA `permitted_datasets` |
+| — | Process restarts with an existing audit file | **Chain resumes** (append, never truncate) | Hash-chained JSONL |
 
 ## Architecture
 
@@ -72,7 +74,7 @@ flowchart LR
 | MCP authorization | Bearer + RFC 9728 metadata + audience check + OPA | ← same code runs in any cloud → | | |
 | Agent-to-agent trust | Audience-bound A2A token + delegation chain | | | |
 | Policy-as-code | OPA / Rego + `opa test` | | | |
-| Audit | Hash-chained JSONL | CloudTrail | Log Analytics / Sentinel | Cloud Audit Logs |
+| Audit | Append-only hash-chained JSONL (resumes on restart) | CloudTrail | Log Analytics / Sentinel | Cloud Audit Logs |
 
 ## Quick start
 
@@ -80,7 +82,7 @@ Prerequisites: Python 3.10+, OPA (see install lines above), and Terraform ≥ 1.
 
 ```bash
 make setup        # venv + deps
-make verify       # 15 Rego tests + 13 integration tests + terraform validate + 3 mock-provider tests
+make verify       # 15 Rego tests + 15 integration tests + terraform validate + 3 mock-provider tests
 make demo         # narrated 7-scenario run → artifacts/evidence-report.html + audit.jsonl
 make demo-step    # same, pauses between scenarios for live presenting
 make serve        # real HTTP MCP server on :8765, prints curl commands with fresh tokens

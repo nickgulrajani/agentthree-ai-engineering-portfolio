@@ -10,7 +10,7 @@ Companion storyboard: [Azure DevOps multi-cloud CI/CD simulator](https://agentth
 
 ## Status
 
-**Last verified:** 2026-10-17 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
 
 
 ## Implementation status
@@ -19,9 +19,9 @@ Companion storyboard: [Azure DevOps multi-cloud CI/CD simulator](https://agentth
 |------|--------|-------|
 | Gate pipeline (pytest, Checkov, MCP contracts, eval fixtures) | **Implemented (local + CI)** | Runs via `make` / `scripts/run-gates.sh` and GitHub Actions |
 | Terraform | **Validate only** | `fmt` + `validate` — never `apply` |
-| Container scan (Trivy) | **Implemented (filesystem scan)** | No registry push |
+| Container scan (Trivy) | **Implemented (filesystem scan)** | Exit code `1` on CRITICAL/HIGH — gate fails closed; no registry push |
 | Deploy / rollback | **Simulated dry-run** | Manifests + health → rollback procedure; no AKS/GKE/EKS |
-| Approvals | **Local flag + optional GitHub Environment** | Not a live Azure DevOps org |
+| Approvals | **Fail-closed by default** | `approve_prod` / `PROD_APPROVED` default **false**; optional GitHub Environment reviewers |
 | Cloud infrastructure | **Not deployed** | Simulator mapping only — see [docs/architecture.md](docs/architecture.md) |
 
 **Simulated vs cloud:** Security and evaluation *gates* are real and reproducible. Cloud *deployments* are intentionally simulated so the demo stays at $0.
@@ -39,8 +39,8 @@ Architecture diagram: [docs/architecture.md](docs/architecture.md)
 | pytest | Unit + approval/rollback helpers |
 | MCP contract tests | Schema, allowlist, deny-by-default auth |
 | Agent evaluations | Offline golden fixtures + thresholds |
-| Container scanning | Trivy filesystem scan (CI); optional locally |
-| Deployment approvals | `PROD_APPROVED` / optional GitHub Environment |
+| Container scanning | Trivy filesystem scan with `--exit-code 1` (CI + local); optional skip via `SKIP_TRIVY=1` |
+| Deployment approvals | Defaults to **blocked**; set `PROD_APPROVED=true` or workflow `approve_prod=true` |
 | Rollback | Dry-run restore of previous revision on bad health |
 
 **Demo blockers**

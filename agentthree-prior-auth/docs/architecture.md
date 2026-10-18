@@ -41,6 +41,7 @@ flowchart LR
 
 ## Protocol notes
 
-- **A2A** — Agent Cards via `to_a2a()` (optional ports 9001–9003); each case emits JSON-RPC `message/send` envelopes with a shared `contextId`.
-- **MCP** — Streamable HTTP at `/mcp`; agents never query stores directly.
-- **Safety** — Agents cannot deny; adverse paths escalate to a human. Audit events are SHA-256 hash-chained.
+- **A2A** — Agent Cards via `to_a2a()` (`START_A2A=true`, ports 9001–9003). The case pipeline POSTs JSON-RPC `message/send` to the recipient’s A2A server; if the server is down it keeps a local task envelope for the UI. Shared `contextId` per case.
+- **MCP** — Streamable HTTP at `/mcp`; agents never query stores directly. Resilience drills call the `set_fault` tool so failures come from the server (with real backoff sleeps), not scripted client errors.
+- **Gemini** — Live path uses the async `google.genai` client (`client.aio.models.generate_content`). CDS grounding reports `claims` / `cited` / `unsupported`.
+- **HITL** — Agents cannot deny; adverse paths escalate to a human. Sealing a decision twice returns HTTP `409`. Audit events are SHA-256 hash-chained.

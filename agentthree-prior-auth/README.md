@@ -10,7 +10,7 @@ One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) 
 
 ## Status
 
-**Last verified:** 2026-10-17 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
 
 
 ## Implementation status
@@ -18,15 +18,16 @@ One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) 
 | Area | Status | Notes |
 |------|--------|-------|
 | ADK agents (intake · prior auth · CDS) | **Implemented (local)** | Google ADK `LlmAgent`s in `agents/` |
-| A2A handoffs + MCP clinical tools | **Implemented (local)** | FastMCP server over demo FHIR / policy data |
-| Live Run UI (React + classic HTML) | **Implemented (local)** | SSE pipeline + human-in-the-loop gate |
+| A2A handoffs | **Implemented (local)** | Pipeline `send_a2a()` POSTs JSON-RPC `message/send` to Agent Card servers when `START_A2A=true` (ports 9001–9003); falls back to local envelopes if servers are down |
+| MCP clinical tools + fault drills | **Implemented (local)** | FastMCP over demo FHIR / policy; resilience drills arm `set_fault` on the server with real failures + sleeps |
+| Live Run UI (React + classic HTML) | **Implemented (local)** | SSE pipeline + human-in-the-loop gate; decision endpoint returns `409` if the case is already sealed |
 | Audit ledger | **Implemented (local)** | Case trail for demo runs |
-| Gemini reasoning | **Optional live API** | AI Studio free tier when `DEMO_MODE=false` + `GOOGLE_API_KEY` |
+| Gemini reasoning | **Optional live API** | Async `google.genai` client (AI Studio) when `DEMO_MODE=false` + `GOOGLE_API_KEY`; grounding counts `claims` / `cited` / `unsupported` |
 | Fixture / offline path | **Implemented** | `DEMO_MODE=true` — $0; MCP + A2A still exercise real code paths |
 | Vertex AI / Workspace Gemini | **Not used by default** | Keep `GOOGLE_GENAI_USE_VERTEXAI=FALSE` |
 | Cloud Run / GKE deploy | **Not deployed** | Optional future — not required for the demo |
 
-**Simulated vs cloud:** Orchestration, MCP tools, A2A flow, and UI are real local services. Clinical data and payer policy are **synthetic**. LLM calls are either fixture-backed (`DEMO_MODE=true`) or optional **AI Studio** API — not a production Vertex / Cloud Run deployment.
+**Simulated vs cloud:** Orchestration, MCP tools, A2A HTTP handoffs, and UI are real local services. Clinical data and payer policy are **synthetic**. LLM calls are either fixture-backed (`DEMO_MODE=true`) or optional **AI Studio** API — not a production Vertex / Cloud Run deployment.
 
 Architecture diagram: below and [docs/architecture.md](docs/architecture.md)
 
@@ -127,7 +128,7 @@ Keep `GOOGLE_GENAI_USE_VERTEXAI=FALSE` to stay off Vertex billing.
 
 Happy path: Jordan Rivera · CPT `72148` · ICD-10 `M54.16` · 6+ weeks PT · neurologic findings → recommend approval → human gate.
 
-Fault injection: MCP timeout, eligibility outage, missing policy, grounding failure.
+Fault injection (via MCP `set_fault`): MCP timeout, eligibility outage, missing policy; plus a CDS grounding-fail regenerate path.
 
 ---
 
@@ -148,7 +149,7 @@ Deterministic offline scorer (`evaluation/run_eval.py`) — no Gemini required. 
 | **Task / outcome accuracy** | **5 / 5 (100%)** |
 | Golden cases | 5 synthetic CPT `72148` scenarios |
 | CDS grounding on meets path | Citations present; `unsupported = 0` |
-| Pytest (domain + MCP + eval) | 15 passed |
+| Pytest (domain + MCP + eval) | 16 passed |
 
 Reproduce:
 
@@ -163,10 +164,10 @@ Reproduce:
 
 | Area | Folder | Next increments |
 |------|--------|-----------------|
-| Agents | `agents/` | Stronger structured output schemas; RemoteA2aAgent wiring |
+| Agents | `agents/` | Stronger structured output schemas |
 | MCP | `mcp_servers/` | Split FHIR / policy / eligibility into separate servers |
 | Evaluation | `evaluation/` | Wire UI Evaluation tab to `published_results.json` |
-| Tests | `tests/` | Broader pipeline integration tests; CI badge |
+| Tests | `tests/` | Broader live-pipeline integration (with MCP + optional A2A up) |
 | Deploy | _(future)_ | Cloud Run / GKE — optional, not required for the demo |
 
 ### Reproducible tests

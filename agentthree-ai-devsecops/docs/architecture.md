@@ -36,5 +36,5 @@ flowchart LR
 | Terraform / Checkov | `infra/*` + Checkov |
 | Integration / MCP | `tests/test_mcp_contract.py` |
 | Security / AI evaluation | `evaluation/fixtures/*` |
-| PROD approval | `PROD_APPROVED` / Environment |
+| PROD approval | `PROD_APPROVED` (default false) / workflow `approve_prod` / optional Environment |
 | Health / rollback | `rollback.py` |

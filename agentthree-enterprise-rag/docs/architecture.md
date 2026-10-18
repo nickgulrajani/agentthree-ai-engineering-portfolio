@@ -27,7 +27,7 @@ Non-billable portfolio demo. Everything runs offline: hashing embeddings, in-mem
 | Vector search | Cosine similarity over in-memory matrix |
 | Keyword retrieval | BM25 |
 | Hybrid | Reciprocal rank fusion (RRF) |
-| Access control | Clearance rank + department + role intersection |
+| Access control | Clearance rank + department + role intersection; unknown classifications fail closed |
 | Grounded answers | Extractive sentences from authorized chunks only |
 | Refuse to fabricate | Score + lexical overlap gates |
 | RAG evaluation | YAML fixtures: answered, cite, refuse, ACL |

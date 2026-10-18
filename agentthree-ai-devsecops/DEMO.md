@@ -51,6 +51,7 @@ Expect: deploy dry-run succeeds, health fails at 8.1% error rate, `artifacts/rol
 - Push to GitHub (public repo = free Actions minutes).
 - **Actions → AI DevSecOps Pipeline → Run workflow**
 - Choose scenario: `pass` / `fail-checkov` / `fail-eval` / `fail-health`
+- Set **`approve_prod=true`** when you want the deploy dry-run to pass (default is `false` — the approval gate blocks).
 
 To add a real human approval gate (still $0): repo **Settings → Environments → production → Required reviewers**, then add `environment: production` to the `deploy-dry-run` job.
 
