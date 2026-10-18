@@ -25,6 +25,7 @@ run() {
 
 # --- Healthcare Multi-Agent AI (flagship) ---
 run "agentthree-prior-auth" bash -lc '
+  set -euo pipefail
   cd agentthree-prior-auth
   python3 -m venv .venv
   .venv/bin/pip install -q -r requirements.txt
@@ -34,6 +35,7 @@ run "agentthree-prior-auth" bash -lc '
 
 # --- Confidential AI ---
 run "agentthree-confidential-ai" bash -lc '
+  set -euo pipefail
   cd agentthree-confidential-ai
   python3 -m venv .venv
   .venv/bin/pip install -q -e ".[dev]"
@@ -58,6 +60,7 @@ run "agentthree-multicloud-zero-trust" bash -lc '
 
 # --- Enterprise RAG ---
 run "agentthree-enterprise-rag" bash -lc '
+  set -euo pipefail
   cd agentthree-enterprise-rag
   python3 -m venv .venv
   .venv/bin/pip install -q -e ".[dev]" 2>/dev/null || .venv/bin/pip install -q -r requirements.txt
@@ -66,6 +69,7 @@ run "agentthree-enterprise-rag" bash -lc '
 
 # --- AI DevSecOps ---
 run "agentthree-ai-devsecops" bash -lc '
+  set -euo pipefail
   cd agentthree-ai-devsecops
   python3 -m venv .venv
   .venv/bin/pip install -q -r requirements.txt
@@ -75,6 +79,7 @@ run "agentthree-ai-devsecops" bash -lc '
 
 # --- Agent Evaluation ---
 run "agentthree-agent-eval" bash -lc '
+  set -euo pipefail
   cd agentthree-agent-eval
   python3 -m venv .venv
   .venv/bin/pip install -q -e ".[dev]"

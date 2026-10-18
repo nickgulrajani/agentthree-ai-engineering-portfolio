@@ -553,14 +553,19 @@ async def run_case(
                 "cds",
                 "knowledge-mcp",
                 "guideline_search",
-                {"query": q, "sources": ["ACR AC", "ACP"], "mode": "vector+graph", "topK": 4},
+                {"query": q, "sources": ["ACR AC", "ACP"], "mode": "vector+graph", "topK": 12},
             )
 
             guide_payload = guidelines if ok_g else {"hits": []}
+            policy_payload = policy_hits if ok_p else {"hits": []}
             if fault == "grounding_fail":
                 # Real drill: inject an uncited claim before the citation filter, then regenerate.
                 draft, dur_bad, tok_bad = await synthesize_with_gemini(
-                    x, pol, guide_payload, inject_uncited=True
+                    x,
+                    pol,
+                    guide_payload,
+                    policy_hits=policy_payload,
+                    inject_uncited=True,
                 )
                 unsupported = int((draft.get("grounding") or {}).get("unsupported") or 0)
                 await record(
@@ -602,7 +607,11 @@ async def run_case(
                 )
 
             cds, dur, tok = await synthesize_with_gemini(
-                x, pol, guide_payload, inject_uncited=False
+                x,
+                pol,
+                guide_payload,
+                policy_hits=policy_payload,
+                inject_uncited=False,
             )
             await record(
                 "llm",

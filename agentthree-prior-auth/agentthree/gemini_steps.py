@@ -113,6 +113,38 @@ _UNCITED_DRILL = {
 }
 
 
+def build_citation_allowlist(
+    guidelines: dict[str, Any] | None,
+    policy_hits: dict[str, Any] | None = None,
+) -> list[str]:
+    """Union of guideline hit ids and policy chunk ids (plus POL-/bare aliases)."""
+    allowed: list[str] = []
+    seen: set[str] = set()
+
+    def add(cid: str | None) -> None:
+        if not cid or cid in seen:
+            return
+        seen.add(cid)
+        allowed.append(cid)
+        # Domain cites use POL-AHP-… while policy chunks are AHP-… — accept both.
+        if cid.startswith("POL-"):
+            bare = cid[4:]
+            if bare not in seen:
+                seen.add(bare)
+                allowed.append(bare)
+        elif cid.startswith("AHP-"):
+            pol = f"POL-{cid}"
+            if pol not in seen:
+                seen.add(pol)
+                allowed.append(pol)
+
+    for h in (guidelines or {}).get("hits") or []:
+        add(h.get("id"))
+    for h in (policy_hits or {}).get("hits") or []:
+        add(h.get("chunk") or h.get("id"))
+    return allowed
+
+
 def apply_citation_filter(
     recs: list[dict[str, Any]],
     allowed: list[str],
@@ -126,14 +158,15 @@ def apply_citation_filter(
     working = list(recs)
     if inject_uncited:
         working.append(dict(_UNCITED_DRILL))
+    allowed_set = set(allowed)
     bad = [
         r
         for r in working
-        if not r.get("cite") or not all(c in allowed for c in r.get("cite", []))
+        if not r.get("cite") or not all(c in allowed_set for c in r.get("cite", []))
     ]
     cleaned: list[dict[str, Any]] = []
     for r in working:
-        cites = [c for c in (r.get("cite") or []) if (not allowed) or c in allowed]
+        cites = [c for c in (r.get("cite") or []) if (not allowed_set) or c in allowed_set]
         if not cites:
             continue
         cleaned.append({**r, "cite": cites})
@@ -150,12 +183,12 @@ async def synthesize_with_gemini(
     pol: dict[str, Any],
     guidelines: dict[str, Any],
     *,
+    policy_hits: dict[str, Any] | None = None,
     inject_uncited: bool = False,
 ) -> tuple[dict[str, Any], int, int]:
     fallback = cds_evaluate(x, pol)
-    allowed = [h.get("id") for h in (guidelines.get("hits") or []) if h.get("id")]
-    # When allowed is empty (demo guidelines missing), treat fallback cites as the allow-list
-    # so inject_uncited still produces a real unsupported hit.
+    allowed = build_citation_allowlist(guidelines, policy_hits)
+    # Last resort (empty retrieval): keep deterministic fixture cites valid.
     if not allowed:
         allowed = [c for r in (fallback.get("recs") or []) for c in (r.get("cite") or [])]
 
@@ -179,7 +212,7 @@ Every cite MUST be from this allowed set: {allowed}
 Never approve or deny coverage.
 
 Case:
-{json.dumps({"intake": x, "pa": pol, "guidelines": guidelines})[:5000]}
+{json.dumps({"intake": x, "pa": pol, "guidelines": guidelines, "policy": policy_hits})[:5000]}
 """
     try:
         data, dur, tokens = await _generate(prompt)

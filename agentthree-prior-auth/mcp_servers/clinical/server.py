@@ -241,7 +241,7 @@ def guideline_search(
     query: str,
     sources: list[str] | None = None,
     mode: str = "vector+graph",
-    topK: int = 4,
+    topK: int = 12,
 ) -> dict[str, Any]:
     """Retrieve clinical guideline chunks for evidence synthesis.
 
@@ -249,7 +249,7 @@ def guideline_search(
         query: Clinical question.
         sources: Preferred sources (e.g. ACR, ACP).
         mode: Retrieval mode label.
-        topK: Max hits.
+        topK: Max hits (default covers the full demo guideline corpus).
     """
     logger.info("guideline_search q=%s", query)
     q = query.lower()
@@ -260,10 +260,16 @@ def guideline_search(
         for tok in re.findall(r"[a-z0-9]+", q):
             if tok in blob:
                 score += 0.07
-        if "cauda" in q and "ces" in g["id"].lower():
+        if "cauda" in q and ("ces" in g["id"].lower() or "red-flag" in g["id"].lower()):
             score += 0.4
         if "radicul" in q and "radicul" in blob:
             score += 0.25
+        if "urgent" in q or "expedit" in q:
+            if "cms" in g["id"].lower() or "timeframe" in blob:
+                score += 0.35
+        if "conservative" in q or "pt " in q or "physical therapy" in q:
+            if "acp" in g["id"].lower() or "pol-ahp" in g["id"].lower():
+                score += 0.2
         scored.append((min(score, 0.99), g))
     scored.sort(key=lambda x: -x[0])
     hits = [{"id": g["id"], "score": round(s, 2), "text": g["text"]} for s, g in scored[:topK]]

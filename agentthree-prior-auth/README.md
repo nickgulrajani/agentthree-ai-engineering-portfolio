@@ -10,7 +10,7 @@ One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) 
 
 ## Status
 
-**Last verified:** 2026-10-18 · 18 pytest green · suite via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+**Last verified:** 2026-10-18 · 21 pytest green · suite via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
 
 
 ## Implementation status
@@ -149,7 +149,7 @@ Deterministic offline scorer (`evaluation/run_eval.py`) — no Gemini required. 
 | **Task / outcome accuracy** | **5 / 5 (100%)** |
 | Golden cases | 5 synthetic CPT `72148` scenarios |
 | CDS grounding on meets path | Citations present; `unsupported = 0` |
-| Pytest (domain + MCP + eval + grounding) | 18 passed |
+| Pytest (domain + MCP + eval + grounding) | 21 passed |
 
 Reproduce:
 
