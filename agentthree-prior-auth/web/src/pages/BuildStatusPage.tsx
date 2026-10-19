@@ -9,7 +9,7 @@ const ROWS: Row[] = [
   { name: 'React Live Run UI', detail: 'web/ — agents in play + inspector', status: 'built' },
   { name: 'Overview architecture UI', detail: 'Same React app — diagram + stack', status: 'built' },
   { name: 'Audit ledger', detail: 'SHA-256 hash chain per case', status: 'built' },
-  { name: 'Evaluation harness', detail: 'evaluation/ golden cases', status: 'built' },
+  { name: 'Evaluation harness + UI', detail: 'evaluation/ golden cases · Evaluation tab', status: 'built' },
   { name: 'A2A Agent Card servers', detail: 'START_A2A=true · ports 9001–9003 · live POSTs', status: 'built' },
   { name: 'Cloud Run / GKE deploy', detail: 'Deferred — keep local for $0 demo', status: 'sim' },
   { name: 'Confidential Computing', detail: 'Deferred enterprise path', status: 'sim' },

@@ -11,7 +11,11 @@ Synthetic prior-auth cases scored on **outcome accuracy** (meets / pend / urgent
 | `cases.json` | Golden scenarios (5 cases) for CPT 72148 / AHP-RAD-014 |
 | `run_eval.py` | Deterministic scorer (domain helpers; no Gemini required) |
 | `published_results.json` | **Committed** baseline metrics for recruiters / CI drift checks |
-| `last_results.json` | Latest local run (gitignored) — paste into the UI Evaluation tab |
+| `last_results.json` | Latest local run (gitignored) — shown in the UI Evaluation tab when present |
+
+## UI
+
+The React **Evaluation** tab loads `GET /api/evaluation` (published baseline, plus `last_results.json` when you re-run the scorer).
 
 ## Published results
 
@@ -19,4 +23,4 @@ See [`published_results.json`](./published_results.json) for the committed basel
 
 ## Metrics (roadmap)
 
-Align with the Live Run Evaluation tab: documentation completeness, criterion match, citation grounding, escalation correctness, latency budgets.
+Expand beyond outcome accuracy: documentation completeness, criterion match, citation grounding, escalation correctness, latency budgets.

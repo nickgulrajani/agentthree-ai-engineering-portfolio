@@ -107,3 +107,29 @@ export type Health = {
   project: string
   ports: { api: number; mcp: number }
 }
+
+export type EvalRow = {
+  id: string
+  label?: string
+  expected: string
+  actual: string
+  pass: boolean
+  gaps?: string[]
+  findings?: number
+}
+
+export type EvalBundle = {
+  outcomeAccuracy: number
+  cases: number
+  passed: number
+  source: string
+  baseline: boolean
+  rows: EvalRow[]
+}
+
+export type EvaluationResponse = {
+  active: EvalBundle
+  published: EvalBundle
+  latest: EvalBundle | null
+  using: 'latest' | 'published'
+}

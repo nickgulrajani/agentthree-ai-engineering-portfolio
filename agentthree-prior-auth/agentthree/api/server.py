@@ -95,6 +95,53 @@ async def agent_cards() -> dict[str, Any]:
     }
 
 
+@app.get("/api/evaluation")
+async def evaluation() -> dict[str, Any]:
+    """Published (and optional latest) offline eval metrics for the Evaluation tab."""
+    eval_dir = ROOT / "evaluation"
+    cases_path = eval_dir / "cases.json"
+    published_path = eval_dir / "published_results.json"
+    latest_path = eval_dir / "last_results.json"
+
+    if not published_path.is_file():
+        raise HTTPException(404, "evaluation/published_results.json not found")
+
+    labels: dict[str, str] = {}
+    if cases_path.is_file():
+        for c in json.loads(cases_path.read_text()):
+            labels[str(c.get("id"))] = str(c.get("label") or c.get("id"))
+
+    def enrich(payload: dict[str, Any], *, baseline: bool) -> dict[str, Any]:
+        rows = []
+        for r in payload.get("rows") or []:
+            rid = str(r.get("id", ""))
+            rows.append({**r, "label": labels.get(rid, rid)})
+        return {
+            "outcomeAccuracy": float(payload.get("outcome_accuracy") or 0),
+            "cases": int(payload.get("cases") or len(rows)),
+            "passed": int(payload.get("passed") or sum(1 for r in rows if r.get("pass"))),
+            "source": payload.get("source") or "",
+            "baseline": baseline,
+            "rows": rows,
+        }
+
+    published = enrich(json.loads(published_path.read_text()), baseline=True)
+    latest = None
+    if latest_path.is_file():
+        try:
+            latest = enrich(json.loads(latest_path.read_text()), baseline=False)
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("Could not read last_results.json: %s", exc)
+
+    active = latest or published
+    return {
+        "active": active,
+        "published": published,
+        "latest": latest,
+        "using": "latest" if latest else "published",
+    }
+
+
 QUEUES: dict[str, asyncio.Queue] = {}
 
 

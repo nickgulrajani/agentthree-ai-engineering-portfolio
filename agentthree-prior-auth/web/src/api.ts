@@ -1,10 +1,16 @@
-import type { CaseForm, CaseResult, Health, StreamMsg } from './types'
+import type { CaseForm, CaseResult, EvaluationResponse, Health, StreamMsg } from './types'
 
 const API = import.meta.env.VITE_API_BASE || ''
 
 export async function fetchHealth(): Promise<Health> {
   const r = await fetch(`${API}/api/health`)
   if (!r.ok) throw new Error('Backend offline')
+  return r.json()
+}
+
+export async function fetchEvaluation(): Promise<EvaluationResponse> {
+  const r = await fetch(`${API}/api/evaluation`)
+  if (!r.ok) throw new Error(r.status === 404 ? 'Evaluation results not found' : 'Failed to load evaluation')
   return r.json()
 }
 

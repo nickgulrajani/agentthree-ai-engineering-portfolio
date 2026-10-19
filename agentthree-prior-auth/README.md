@@ -109,6 +109,7 @@ Open **http://127.0.0.1:5173** — one UI with:
 | **Overview** | Architecture SVG (ADK · A2A · MCP · HITL · audit) |
 | **Live run** | Agents lighting up + MCP / A2A inspector |
 | **Engineering** | Capability cards |
+| **Evaluation** | Golden-case outcome accuracy (published baseline) |
 | **Build status** | What’s built vs deferred |
 
 Classic HTML remains at **http://127.0.0.1:8000/classic**.
@@ -167,7 +168,7 @@ Reproduce:
 |------|--------|-----------------|
 | Agents | `agents/` | Stronger structured output schemas |
 | MCP | `mcp_servers/` | Split FHIR / policy / eligibility into separate servers |
-| Evaluation | `evaluation/` | Wire UI Evaluation tab to `published_results.json` |
+| Evaluation | `evaluation/` | Broader metrics (grounding, latency) beyond outcome accuracy |
 | Tests | `tests/` | Broader live-pipeline integration (with MCP + optional A2A up) |
 | Deploy | _(future)_ | Cloud Run / GKE — optional, not required for the demo |
 

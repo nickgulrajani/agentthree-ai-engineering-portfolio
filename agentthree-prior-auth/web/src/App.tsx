@@ -3,15 +3,17 @@ import './App.css'
 import { fetchHealth } from './api'
 import { BuildStatusPage } from './pages/BuildStatusPage'
 import { EngineeringPage } from './pages/EngineeringPage'
+import { EvaluationPage } from './pages/EvaluationPage'
 import { LiveRunPage } from './pages/LiveRunPage'
 import { OverviewPage } from './pages/OverviewPage'
 import type { Health } from './types'
 
-type View = 'overview' | 'run' | 'eng' | 'build'
+type View = 'overview' | 'run' | 'eval' | 'eng' | 'build'
 
 const NAV: Array<{ id: View; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'run', label: 'Live run' },
+  { id: 'eval', label: 'Evaluation' },
   { id: 'eng', label: 'Engineering' },
   { id: 'build', label: 'Build status' },
 ]
@@ -66,6 +68,7 @@ export default function App() {
 
       {view === 'overview' && <OverviewPage onGoLive={() => setView('run')} />}
       {view === 'run' && <LiveRunPage />}
+      {view === 'eval' && <EvaluationPage />}
       {view === 'eng' && <EngineeringPage />}
       {view === 'build' && <BuildStatusPage />}
     </div>
