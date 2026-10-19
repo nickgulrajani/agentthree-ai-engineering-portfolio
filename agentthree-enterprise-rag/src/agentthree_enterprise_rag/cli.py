@@ -147,5 +147,24 @@ def principals() -> None:
     console.print(table)
 
 
+@main.command("serve")
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=8765, show_default=True, type=int)
+def serve(host: str, port: int) -> None:
+    """Start local FastAPI console API (zero cloud / LLM cost)."""
+    from .api import main as serve_api
+
+    console.print(
+        Panel.fit(
+            f"[bold]Enterprise RAG API[/bold]\n"
+            f"http://{host}:{port}\n"
+            "Local · zero API cost · React UI: cd web && npm run dev",
+            border_style="magenta",
+        )
+    )
+    serve_api(host=host, port=port)
+
+
 if __name__ == "__main__":
     main()
+

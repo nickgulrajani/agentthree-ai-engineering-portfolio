@@ -24,6 +24,7 @@ Companion browser lab: [RAG Engineering · Module 04](https://agentthree.ai/ai-e
 | Grounded answers + citations | **Implemented (local)** | Extractive sentences from authorized chunks |
 | Refuse-to-fabricate | **Implemented (local)** | Score + lexical overlap gates |
 | Offline RAG evaluation | **Implemented** | YAML fixtures + `pytest` / `agentthree-rag eval` (8 pytest cases) |
+| React Live Ask console | **Implemented (local)** | Vite FE + FastAPI; principal switch, presets, citations, eval tab |
 | Managed vector DB / cloud search | **Not deployed** | Documented analogues only (OpenSearch, Azure AI Search, Vertex) |
 | Hosted LLM grounding | **Not deployed** | Local extractive grounder simulates citation/abstain policy |
 
@@ -68,6 +69,26 @@ Plus offline RAG evaluation: faithfulness / citation / ACL fixtures at **100%**.
 
 ## Quick start (local, free)
 
+### React console (interview demo)
+
+```bash
+cd agentthree-enterprise-rag
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+# Terminal 1 — API (http://127.0.0.1:8765)
+./scripts/run_ui.sh
+# or: agentthree-rag serve
+
+# Terminal 2 — Vite UI
+cd web && yarn install && yarn dev
+# open http://127.0.0.1:5173 → Live ask → run the four presets
+```
+
+Optional: `cd web && yarn build` then restart the API so `/` serves the React bundle.
+
+### CLI walkthrough
+
 ```bash
 cd agentthree-enterprise-rag
 chmod +x scripts/run_demo.sh
@@ -100,15 +121,17 @@ Expected: pytest green; offline eval reports **100%** on faithfulness / citation
 
 | Path | Purpose |
 |------|---------|
-| `src/agentthree_enterprise_rag/` | Ingest, embeddings, hybrid search, ACL, grounding, eval, CLI |
+| `src/agentthree_enterprise_rag/` | Ingest, embeddings, hybrid search, ACL, grounding, eval, FastAPI, CLI |
+| `web/` | React Live Ask console (Vite) — Overview / Ask / Eval / Engineering |
 | `data/policies/` | Sample enterprise policy corpus with ACL metadata |
 | `configs/acl_policy.yaml` | Demo principals and clearance ranks |
 | `evaluation/fixtures/` | Offline RAG eval cases |
 | `docs/architecture.md` | Control flow + production mapping |
-| `tests/` | Proof: authorized answer, ACL deny, fabrication refuse |
+| `tests/` | Proof: authorized answer, ACL deny, fabrication refuse, API |
 
 ## Documentation
 
+- [Use case value proposition](Use_Case_Value_Prop.md)
 - [Architecture](docs/architecture.md)
 - [60-second demo](DEMO.md)
 
