@@ -48,7 +48,7 @@ One command runs each project's test suite. Zero Trust **skips** allow/deny test
 - **macOS:** `brew install opa`
 - **Linux:** `curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static && chmod +x opa && sudo mv opa /usr/local/bin/opa`
 
-CI runs the same `make verify` on every push (see the badge above).
+CI runs the same `make verify` on every push, pull request, and a nightly schedule (see the badge above). Runs show on the [Actions](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions) tab; they do not create git commits.
 
 ## Clone
 
@@ -80,6 +80,7 @@ The same projects also exist as individual GitHub repositories for focused cloni
 
 Daily changelog for this monorepo (newest first). Each day work lands, add a dated bullet here.
 
+- **2026-10-21** — Nightly GitHub Actions health checks: portfolio `make verify` plus per-project CI on the standalone mirrors (pytest/eval, and frontend lint/build where a UI exists). Same real suites; no dummy commits.
 - **2026-10-18** — Homepage / site references re-synced to portfolio table (test counts, Start here 21 pytest + 5/5 eval, standalone mirror links); Azure Zero Trust demo Use Case tab for parity with AWS/GCP.
 - **2026-10-18** — Fix demo CDS regression: citation allow-list from guideline **and** policy hits + POL-AHP corpus ids; no-fault cases assert `unsupported == 0`; `set -euo pipefail` on every `verify-all` project block so failing pytest cannot be masked by a later command. Prior-auth pytest 21.
 - **2026-10-18** — CI/drill follow-ups: `opa test` no longer uses invalid `-q` (Rego suite fails closed in `verify-all`); DevSecOps deploy dry-run only on `workflow_dispatch` so push/PR stays green with approval default false; prior-auth `grounding_fail` injects a real uncited claim before the citation filter. Prior-auth pytest 18.

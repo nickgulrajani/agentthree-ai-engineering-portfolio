@@ -10,7 +10,9 @@ Companion storyboard: [Azure DevOps multi-cloud CI/CD simulator](https://agentth
 
 ## Status
 
-**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+[![AI DevSecOps Pipeline](https://github.com/nickgulrajani/agentthree-ai-devsecops/actions/workflows/pipeline.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-ai-devsecops/actions/workflows/pipeline.yml)
+
+**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)). This repo also runs pytest, Checkov, Trivy, and the eval gate on push, PR, and a nightly schedule (deploy dry-run stays on manual dispatch).
 
 
 ## Implementation status

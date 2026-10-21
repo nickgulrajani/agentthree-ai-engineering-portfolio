@@ -4,6 +4,9 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # Daily health check at 14:00 UTC. Runs the same gates; does not create commits.
+  schedule:
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       scenario:

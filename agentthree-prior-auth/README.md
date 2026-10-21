@@ -11,7 +11,9 @@ One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) 
 
 ## Status
 
-**Last verified:** 2026-10-18 · 21 pytest green · suite via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)).
+[![Verify](https://github.com/nickgulrajani/agentthree-prior-auth/actions/workflows/verify.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-prior-auth/actions/workflows/verify.yml)
+
+**Last verified:** 2026-10-18 · 21 pytest green · suite via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo ([CI](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)). This repo also runs pytest, the evaluation gate, and Live Run UI lint/build on push, PR, and a nightly schedule.
 
 
 ## Implementation status

@@ -10,7 +10,9 @@ Companion browser lab: [Agent Evaluation · Module 07](https://agentthree.ai/ai-
 
 ## Status
 
-**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo.
+[![Verify](https://github.com/nickgulrajani/agentthree-agent-eval/actions/workflows/verify.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-agent-eval/actions/workflows/verify.yml)
+
+**Last verified:** 2026-10-18 · suite green via [`make verify`](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio#verify-everything) in the [AI Engineering Portfolio](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio) monorepo. This repo also runs pytest and the evaluation gate on push, PR, and a nightly schedule.
 
 ## Implementation status
 
