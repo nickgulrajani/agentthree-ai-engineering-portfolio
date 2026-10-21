@@ -6,5 +6,5 @@ verify test:
 	@./scripts/verify-all.sh
 
 help:
-	@echo "make verify   # run pytest (and evals) across all six projects"
-	@echo "              # Zero Trust skips cleanly if OPA is not installed"
+	@echo "make verify   # run pytest (and evals) across all seven projects"
+	@echo "              # Zero Trust / FinOps skip Rego cleanly if OPA is not installed"

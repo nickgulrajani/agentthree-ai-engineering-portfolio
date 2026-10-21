@@ -1,0 +1,48 @@
+# Simulated Oct 2026 billing period for an illustrative credit card issuer.
+# Figures match the HTML lab. No live CUR, Cost Explorer, or AWS account.
+issuer: "illustrative card issuer"
+period: "2026-10"
+monthly_spend_k: 412.8
+transactions: 160000000
+untagged_pool_k: 161.0
+shared_after_tagging_k: 37.0
+coverage_target: 0.90
+required_tags:
+  - CostCenter
+  - Owner
+  - Environment
+  - Application
+allowed_environments:
+  - prod
+  - staging
+  - dev
+  - loadtest
+costcenter_pattern: "^CC-[0-9]{4}$"
+non_prod_max_size: 2xlarge
+infracost_review_usd: 1000
+infracost_arch_review_usd: 5000
+teams:
+  - name: Platform
+    base_k: 92.0
+  - name: Card Auth
+    base_k: 68.0
+  - name: Fraud & Risk
+    base_k: 70.8
+  - name: Digital
+    base_k: 21.0
+trend_k:
+  - { month: May, spend_k: 351.0 }
+  - { month: Jun, spend_k: 362.0 }
+  - { month: Jul, spend_k: 371.0 }
+  - { month: Aug, spend_k: 384.0 }
+  - { month: Sep, spend_k: 398.0 }
+  - { month: Oct, spend_k: 412.8 }
+services_k:
+  EC2: 168.0
+  RDS / Aurora: 72.0
+  S3: 41.0
+  Data transfer · NAT: 38.0
+  EKS: 29.0
+  CloudWatch: 14.0
+  Lambda: 9.0
+  Other: 41.8

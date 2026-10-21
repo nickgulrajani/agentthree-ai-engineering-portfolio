@@ -1,0 +1,66 @@
+# Untagged spend that can be allocated by applying the tag standard.
+# Simulated CUR line items — not live AWS inventory.
+resources:
+  - name: "EC2 · 38 instances"
+    meta: "m6i.2xlarge, c6i.4xlarge"
+    account: prod-shared
+    team: Platform
+    why: "CloudFormation stack platform-core"
+    cost_k: 31.2
+    missing: [CostCenter, Application]
+  - name: "EBS · 214 volumes"
+    meta: "attached to platform hosts"
+    account: prod-shared
+    team: Platform
+    why: "Inherited from attached instance"
+    cost_k: 6.8
+    missing: [CostCenter, Owner]
+  - name: "S3 · txn-history-raw"
+    meta: "1.2 PB, Standard class"
+    account: prod-risk
+    team: "Fraud & Risk"
+    why: "CloudTrail creator: risk-ml-ci role"
+    cost_k: 18.4
+    missing: [CostCenter, Owner]
+  - name: "NAT Gateway · 6"
+    meta: "3 AZs × 2 VPCs"
+    account: prod-risk
+    team: "Fraud & Risk"
+    why: "VPC owned by risk analytics"
+    cost_k: 16.8
+    missing: [CostCenter, Owner, Environment, Application]
+  - name: "EKS · ng-fraud-score-*"
+    meta: "node groups, real-time scoring"
+    account: prod-shared
+    team: "Fraud & Risk"
+    why: "Namespace labels via split cost allocation"
+    cost_k: 8.8
+    missing: [CostCenter]
+  - name: "RDS · card-ledger-replica"
+    meta: "db.r6g.4xlarge, Multi-AZ"
+    account: prod-cardauth
+    team: "Card Auth"
+    why: "Account owner: card authorization"
+    cost_k: 14.9
+    missing: [Environment, Application]
+  - name: "ElastiCache · auth-velocity-cache"
+    meta: "cache.r6g.xlarge × 6"
+    account: prod-cardauth
+    team: "Card Auth"
+    why: "Security group ref from auth-api"
+    cost_k: 12.1
+    missing: [CostCenter, Owner]
+  - name: "CloudFront · 4 distributions"
+    meta: "cardholder web app, statements"
+    account: prod-digital
+    team: Digital
+    why: "Origin bucket tagged Digital"
+    cost_k: 9.4
+    missing: [CostCenter]
+  - name: "ALB · mobile-api-*"
+    meta: "3 load balancers"
+    account: prod-digital
+    team: Digital
+    why: "CloudFormation stack mobile-edge"
+    cost_k: 5.6
+    missing: [Owner, Application]

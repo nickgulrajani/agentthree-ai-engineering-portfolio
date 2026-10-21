@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentthree-aws-finops"
+version = "0.1.0"
+description = "Portfolio demo: AWS FinOps for a card issuer — tag coverage, policy gates, savings math (local, zero AWS cost)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "AgentThree" }]
+dependencies = [
+  "PyYAML>=6.0.1",
+  "click>=8.1.7",
+  "rich>=13.7.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+agentthree-finops = "agentthree_aws_finops.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

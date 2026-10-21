@@ -1,0 +1,48 @@
+# Simulated Compute Optimizer / architecture backlog. Selecting a rec
+# updates local math only — it does not change any AWS resource.
+recommendations:
+  - id: sp
+    category: Commit
+    title: Compute Savings Plan, 1-year no upfront
+    monthly_k: 21.4
+    default_on: true
+  - id: rds
+    category: Commit
+    title: Reserved Instances for the production card ledger (Aurora)
+    monthly_k: 7.9
+    default_on: false
+  - id: rs
+    category: Right-size
+    title: Right-size 46 over-provisioned EC2 instances
+    monthly_k: 14.8
+    default_on: true
+  - id: sch
+    category: Right-size
+    title: Schedule dev, test and UAT off nights and weekends
+    monthly_k: 11.2
+    default_on: true
+  - id: grav
+    category: Architecture
+    title: Move stateless services to Graviton (m6i → m7g)
+    monthly_k: 9.6
+    default_on: false
+  - id: s3
+    category: Architecture
+    title: Lifecycle 7-year statement and audit-log retention to Glacier tiers
+    monthly_k: 8.7
+    default_on: false
+  - id: vpce
+    category: Architecture
+    title: Add S3 and DynamoDB gateway endpoints in prod-risk
+    monthly_k: 6.2
+    default_on: false
+  - id: gp3
+    category: Hygiene
+    title: Convert 612 EBS volumes from gp2 to gp3
+    monthly_k: 3.9
+    default_on: true
+  - id: orph
+    category: Hygiene
+    title: Delete unattached volumes and snapshots older than 180 days
+    monthly_k: 4.3
+    default_on: true

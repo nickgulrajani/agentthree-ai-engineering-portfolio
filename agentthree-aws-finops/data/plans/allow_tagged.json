@@ -1,0 +1,37 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.exports",
+      "type": "aws_s3_bucket",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "tags": {},
+          "tags_all": {
+            "CostCenter": "CC-2210",
+            "Owner": "data-eng",
+            "Environment": "prod",
+            "Application": "exports"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_instance.auth_api",
+      "type": "aws_instance",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "instance_type": "m7g.large",
+          "tags_all": {
+            "CostCenter": "CC-1402",
+            "Owner": "card-auth",
+            "Environment": "prod",
+            "Application": "authorization"
+          }
+        }
+      }
+    }
+  ]
+}

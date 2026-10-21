@@ -1,0 +1,16 @@
+{
+  "diffTotalMonthlyCost": "1387",
+  "projects": [
+    {
+      "name": "prod-risk",
+      "breakdown": {
+        "resources": [
+          {
+            "name": "aws_nat_gateway.risk",
+            "monthlyCost": "1680"
+          }
+        ]
+      }
+    }
+  ]
+}

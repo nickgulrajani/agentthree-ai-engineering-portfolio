@@ -2,7 +2,7 @@
 
 [![Portfolio Verify](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)
 
-Monorepo portfolio of Agent Three AI engineering projects: agentic systems, enterprise RAG, agent evaluation, confidential AI, DevSecOps, and multi-cloud zero trust.
+Monorepo portfolio of Agent Three AI engineering projects: agentic systems, enterprise RAG, agent evaluation, confidential AI, DevSecOps, multi-cloud zero trust, and AWS FinOps.
 
 Website: [agentthree.ai](https://agentthree.ai/)
 
@@ -32,8 +32,9 @@ Lab: [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agenti
 | Enterprise RAG | [`agentthree-enterprise-rag/`](./agentthree-enterprise-rag) | [RAG Engineering](https://agentthree.ai/ai-engineering-lab/rag-engineering) | 8 |
 | AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | [OPA Anomaly Lab](https://agentthree.ai/solutions/opa-anomaly-detection) | 14 |
 | Agent Evaluation | [`agentthree-agent-eval/`](./agentthree-agent-eval) | [Agent Evaluation](https://agentthree.ai/ai-engineering-lab/agent-evaluation) | 7 |
+| AWS FinOps Lab | [`agentthree-aws-finops/`](./agentthree-aws-finops) | [AWS FinOps Lab](https://agentthree.ai/ai-engineering-lab/aws-finops-lab) | 8 |
 
-Test counts: pytest (and for Zero Trust, Rego + integration + Terraform mock-provider when those tools are installed). Agent Evaluation also runs a published A/B gate via `python -m evaluation.run_eval`.
+Test counts: pytest (and for Zero Trust / FinOps, Rego when OPA is installed; Zero Trust also runs Terraform mock-provider). Agent Evaluation also runs a published A/B gate via `python -m evaluation.run_eval`. FinOps is fixture CUR + policy gates — no AWS account.
 
 ## Verify everything
 
@@ -65,7 +66,7 @@ Open any project folder for its README, architecture notes, implementation statu
 
 ## Standalone mirrors (optional)
 
-The same projects also exist as individual GitHub repositories for focused cloning. This portfolio repo is the canonical browsable collection—and matches the six Featured Labs on [agentthree.ai](https://agentthree.ai/).
+The same projects also exist as individual GitHub repositories for focused cloning. This portfolio repo is the canonical browsable collection.
 
 | Project | Standalone repo |
 |---------|-----------------|
@@ -75,11 +76,13 @@ The same projects also exist as individual GitHub repositories for focused cloni
 | Enterprise RAG | [agentthree-enterprise-rag](https://github.com/nickgulrajani/agentthree-enterprise-rag) |
 | AI DevSecOps & Governance | [agentthree-ai-devsecops](https://github.com/nickgulrajani/agentthree-ai-devsecops) |
 | Agent Evaluation | [agentthree-agent-eval](https://github.com/nickgulrajani/agentthree-agent-eval) |
+| AWS FinOps Lab | [agentthree-aws-finops](https://github.com/nickgulrajani/agentthree-aws-finops) |
 
 ## Activity
 
 Daily changelog for this monorepo (newest first). Each day work lands, add a dated bullet here.
 
+- **2026-10-21** — AWS FinOps Lab added as a seventh project (`agentthree-aws-finops/`): fixture CUR, tag/showback, Terraform-plan gates, savings math, HTML storyboard. $0 AWS — no account, no apply.
 - **2026-10-21** — Nightly GitHub Actions health checks: portfolio `make verify` plus per-project CI on the standalone mirrors (pytest/eval, and frontend lint/build where a UI exists). Same real suites; no dummy commits.
 - **2026-10-18** — Homepage / site references re-synced to portfolio table (test counts, Start here 21 pytest + 5/5 eval, standalone mirror links); Azure Zero Trust demo Use Case tab for parity with AWS/GCP.
 - **2026-10-18** — Fix demo CDS regression: citation allow-list from guideline **and** policy hits + POL-AHP corpus ids; no-fault cases assert `unsupported == 0`; `set -euo pipefail` on every `verify-all` project block so failing pytest cannot be masked by a later command. Prior-auth pytest 21.

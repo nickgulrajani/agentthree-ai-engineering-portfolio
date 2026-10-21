@@ -87,6 +87,20 @@ run "agentthree-agent-eval" bash -lc '
   .venv/bin/python -m evaluation.run_eval
 '
 
+# --- AWS FinOps (local fixtures; $0 AWS) ---
+run "agentthree-aws-finops" bash -lc '
+  set -euo pipefail
+  cd agentthree-aws-finops
+  python3 -m venv .venv
+  .venv/bin/pip install -q -e ".[dev]"
+  if command -v opa >/dev/null 2>&1; then
+    opa test policy/
+  else
+    echo "OPA not on PATH — skipping Rego suite (Python policy tests already cover the gates)."
+  fi
+  .venv/bin/python -m pytest -q
+'
+
 echo ""
 if [[ "$fail" -ne 0 ]]; then
   echo "✖ verify-all: one or more projects failed"

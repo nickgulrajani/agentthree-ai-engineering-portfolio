@@ -1,0 +1,1398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AWS FinOps Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: console-style app. Story strip of four numbered steps (See → Allocate → Guard → Optimize) drives the panels. */
+:root{
+  --bg:#08090c; --s1:#0e1117; --s2:#141922; --s3:#1b2230; --line:#253044;
+  --fg:#f3f7fd; --fg2:#c6d4ea;
+  --cyan:#2ee6ff; --magenta:#ff4fd8; --amber:#ffc23d; --lime:#b4f03c; --violet:#a98bff;
+  --display:"Syne",ui-sans-serif,system-ui,sans-serif;
+  --body:"DM Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"DM Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+.track,.track>.fill{display:block}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(26px,4vw,38px);font-weight:800}
+h2{font-size:22px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* header */
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+.sub{color:var(--fg2);max-width:62ch;margin-top:6px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--fg2);background:var(--s1)}
+.badge.sim{border-color:color-mix(in srgb,var(--amber) 55%,transparent);color:var(--amber)}
+
+/* story strip */
+nav.steps{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+.step{background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:2px;transition:border-color .15s,background .15s}
+.step:hover{border-color:color-mix(in srgb,var(--cyan) 50%,var(--line))}
+.step .n{font-family:var(--mono);font-size:12px;color:var(--fg2)}
+.step .t{font-family:var(--display);font-weight:700;font-size:16px}
+.step .d{font-size:13px;color:var(--fg2)}
+.step[aria-selected="true"]{background:var(--s2);border-color:var(--cyan);box-shadow:inset 0 -3px 0 var(--cyan)}
+.step[aria-selected="true"] .n{color:var(--cyan)}
+@media (max-width:1100px){nav.steps{grid-template-columns:repeat(4,minmax(0,1fr))}.step .d{display:none}}
+@media (max-width:560px){nav.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.talk{display:flex;gap:10px;align-items:baseline;font-size:14px;color:var(--fg2);padding:10px 14px;border-left:2px solid var(--violet);background:color-mix(in srgb,var(--violet) 7%,transparent);border-radius:0 8px 8px 0}
+.talk b{font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);white-space:nowrap}
+
+section.panel{display:flex;flex-direction:column;gap:18px}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g2{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+.g2e{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2,.g2e,.g3{grid-template-columns:minmax(0,1fr)}}
+
+.card{background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2)}
+
+/* KPI */
+.kpi{gap:6px}
+.kpi .v{font-family:var(--display);font-size:32px;font-weight:700;line-height:1.1}
+.kpi .f{font-size:13px;color:var(--fg2)}
+.up{color:var(--magenta)} .good{color:var(--lime)} .warn{color:var(--amber)} .cy{color:var(--cyan)} .vi{color:var(--violet)}
+
+/* service bars */
+.sbar{display:grid;grid-template-columns:118px minmax(0,1fr) 72px;gap:10px;align-items:center;font-size:14px}
+.sbar .track{height:10px;background:var(--s3);border-radius:5px;overflow:hidden}
+.sbar .fill{height:100%;border-radius:5px;background:var(--cyan)}
+.sbar .amt{font-family:var(--mono);text-align:right;font-size:13px}
+.bars{display:flex;flex-direction:column;gap:9px}
+
+svg text{font-family:var(--mono);font-size:11px;fill:var(--fg2)}
+.chart-wrap{overflow-x:auto}
+
+.anomaly{display:flex;gap:14px;align-items:flex-start;border:1px solid color-mix(in srgb,var(--magenta) 45%,var(--line));background:color-mix(in srgb,var(--magenta) 6%,var(--s1))}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--magenta);margin-top:6px;flex:none;box-shadow:0 0 0 0 color-mix(in srgb,var(--magenta) 60%,transparent);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.linkbtn{background:none;border:0;padding:0;color:var(--cyan);text-decoration:underline;text-underline-offset:3px}
+
+/* coverage */
+.cov{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.cov .big{font-family:var(--display);font-size:56px;font-weight:800;line-height:1}
+.covbar{flex:1;min-width:200px;display:flex;flex-direction:column;gap:6px}
+.covtrack{height:14px;background:var(--s3);border-radius:7px;position:relative;overflow:hidden}
+.covfill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--lime));border-radius:7px;transition:width .6s ease}
+.covtarget{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber)}
+.covlegend{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--fg2)}
+
+/* table */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:14px}
+th{font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);text-align:left;padding:10px 12px;background:var(--s2);border-bottom:1px solid var(--line)}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.rname{font-weight:600}
+.rmeta{font-family:var(--mono);font-size:12px;color:var(--fg2)}
+.chip{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;margin:2px 4px 2px 0;border:1px solid}
+.chip.miss{color:var(--magenta);border-color:color-mix(in srgb,var(--magenta) 45%,transparent);background:color-mix(in srgb,var(--magenta) 8%,transparent)}
+.chip.ok{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 45%,transparent);background:color-mix(in srgb,var(--lime) 8%,transparent)}
+.chip.cat{color:var(--cyan);border-color:color-mix(in srgb,var(--cyan) 40%,transparent)}
+.chip.eff{color:var(--violet);border-color:color-mix(in srgb,var(--violet) 40%,transparent)}
+.chip.risk{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,transparent)}
+.btn{border:1px solid var(--cyan);background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap}
+.btn:hover{background:color-mix(in srgb,var(--cyan) 22%,transparent)}
+.btn.solid{background:var(--cyan);color:#041016}
+.btn.solid:hover{background:color-mix(in srgb,var(--cyan) 85%,white)}
+.btn.lime{border-color:var(--lime);color:var(--lime);background:color-mix(in srgb,var(--lime) 10%,transparent)}
+.btn:disabled{opacity:.45;cursor:default}
+.done{font-family:var(--mono);font-size:12px;color:var(--lime);white-space:nowrap}
+tr.applied td{background:color-mix(in srgb,var(--lime) 4%,transparent)}
+
+/* showback */
+.sb{display:grid;grid-template-columns:110px minmax(0,1fr) 70px;gap:10px;align-items:center;font-size:14px}
+.sb .track{height:14px;background:var(--s3);border-radius:4px;overflow:hidden}
+.sb .fill{height:100%;transition:width .6s ease;border-radius:4px}
+.sb .amt{font-family:var(--mono);font-size:13px;text-align:right}
+
+/* policy */
+pre.code{margin:0;background:#05060a;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--fg)}
+.k{color:var(--magenta)} .s{color:var(--lime)} .fn{color:var(--cyan)} .c{color:var(--violet)}
+.res{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--s2)}
+.res .addr{font-family:var(--mono);font-size:13px;color:var(--cyan)}
+.term{background:#05060a;border:1px solid var(--line);border-radius:10px;padding:14px;font-family:var(--mono);font-size:12.5px;min-height:120px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.term .fail{color:var(--magenta)} .term .pass{color:var(--lime)} .term .dim{color:var(--fg2)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.layer{gap:8px}
+.layer .tag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.layer ul{margin:0;padding-left:18px;color:var(--fg2);font-size:14px;display:flex;flex-direction:column;gap:4px}
+
+/* recs */
+.savebar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.savebar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.fbtn{border:1px solid var(--line);background:var(--s1);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--fg2)}
+.fbtn[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
+.recs{display:flex;flex-direction:column;gap:8px}
+.rec{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--s1);text-align:left;width:100%;transition:border-color .15s,background .15s}
+.rec:hover{border-color:color-mix(in srgb,var(--lime) 40%,var(--line))}
+.rec[aria-checked="true"]{border-color:color-mix(in srgb,var(--lime) 60%,var(--line));background:color-mix(in srgb,var(--lime) 5%,var(--s1))}
+.box{width:22px;height:22px;border-radius:6px;border:2px solid var(--fg2);display:grid;place-items:center;margin-top:2px}
+.rec[aria-checked="true"] .box{background:var(--lime);border-color:var(--lime)}
+.box svg{opacity:0}
+.rec[aria-checked="true"] .box svg{opacity:1}
+.rec .tt{font-weight:600;font-size:15px}
+.rec .dd{font-size:13.5px;color:var(--fg2);margin-top:3px}
+.rec .sv{font-family:var(--mono);font-size:15px;color:var(--lime);text-align:right;white-space:nowrap}
+.rec .sv small{display:block;font-size:11px;color:var(--fg2)}
+.warnbox{border:1px solid color-mix(in srgb,var(--amber) 55%,var(--line));background:color-mix(in srgb,var(--amber) 7%,var(--s1));color:var(--fg);font-size:14px;border-radius:10px;padding:10px 14px}
+.warnbox b{color:var(--amber)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--fg2)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+/* why tab */
+.thesis{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;align-items:center;padding:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--magenta) 10%,var(--s1)),var(--s1) 60%);border:1px solid var(--line);border-radius:14px}
+.thesis h2{font-size:clamp(22px,3vw,30px);font-weight:800;line-height:1.2}
+.thesis p{color:var(--fg2);margin-top:10px;max-width:58ch}
+.gapviz{display:flex;flex-direction:column;gap:12px}
+.gaprow{display:grid;grid-template-columns:120px minmax(0,1fr) 54px;gap:10px;align-items:center;font-size:14px}
+.gaprow .track{height:12px;background:var(--s3);border-radius:6px;overflow:hidden}
+.gaprow .fill{height:100%;border-radius:6px}
+.gaprow .amt{font-family:var(--mono);text-align:right}
+@media (max-width:900px){.thesis{grid-template-columns:minmax(0,1fr)}}
+.prob{gap:8px}
+.prob .stat{font-family:var(--display);font-size:28px;font-weight:800;line-height:1}
+.prob p{font-size:14px;color:var(--fg2)}
+.phases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.phases{grid-template-columns:minmax(0,1fr)}}
+.phase{text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;border-top:3px solid var(--c)}
+.phase:hover{background:var(--s2)}
+.phase .pn{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--c)}
+.phase .pd{font-size:14px;color:var(--fg2)}
+.phase .pl{font-size:13px;color:var(--c);margin-top:4px}
+table.ba{min-width:560px}
+table.ba td:nth-child(2){color:var(--magenta)} table.ba td:nth-child(3){color:var(--lime)}
+.plan90{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.plan90{grid-template-columns:minmax(0,1fr)}}
+.plan90 ul{margin:0;padding-left:18px;font-size:14px;color:var(--fg2);display:flex;flex-direction:column;gap:4px}
+
+/* policy library */
+.lib{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px}
+@media (max-width:900px){.lib{grid-template-columns:minmax(0,1fr)}}
+.plist{display:flex;flex-direction:column;gap:6px}
+.pitem{text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.pitem:hover{border-color:color-mix(in srgb,var(--cyan) 45%,var(--line))}
+.pitem[aria-selected="true"]{border-color:var(--cyan);background:var(--s2)}
+.pitem .pt{font-weight:600;font-size:14px}
+.pitem .pk{font-family:var(--mono);font-size:11.5px;color:var(--fg2)}
+.sev{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid;align-self:flex-start}
+.sev.deny{color:var(--magenta);border-color:color-mix(in srgb,var(--magenta) 50%,transparent)}
+.sev.warn{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 50%,transparent)}
+.sev.test{color:var(--violet);border-color:color-mix(in srgb,var(--violet) 50%,transparent)}
+.sev.custodian{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 50%,transparent)}
+.plist .grp{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg2);margin:8px 2px 2px}
+.explain{border:1px solid color-mix(in srgb,var(--cyan) 40%,var(--line));background:color-mix(in srgb,var(--cyan) 5%,var(--s1))}
+.explain p{font-size:14px;color:var(--fg2);max-width:80ch}
+.explain code,.inl{font-family:var(--mono);font-size:13px;color:var(--cyan)}
+
+/* pipeline */
+.pipe-wrap{overflow-x:auto;padding-bottom:4px}
+.pipe{display:grid;grid-template-columns:repeat(8,minmax(118px,1fr));gap:0;min-width:980px}
+.stage{position:relative;padding:0 6px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.stage::before{content:"";position:absolute;top:21px;left:-50%;right:50%;height:2px;background:var(--line);z-index:0}
+.stage:first-child::before{display:none}
+.stage.pass::before,.stage.warn::before,.stage.fail::before,.stage.ready::before{background:color-mix(in srgb,var(--cyan) 60%,var(--line))}
+.dot{position:relative;z-index:1;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:13px;background:var(--s2);border:2px solid var(--line);color:var(--fg2);transition:all .25s}
+.stage.run .dot{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 6px color-mix(in srgb,var(--cyan) 15%,transparent);animation:spin 1s linear infinite}
+@keyframes spin{50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--cyan) 5%,transparent)}}
+.stage.pass .dot{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 15%,var(--s2));color:var(--lime)}
+.stage.warn .dot{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 15%,var(--s2));color:var(--amber)}
+.stage.fail .dot{border-color:var(--magenta);background:color-mix(in srgb,var(--magenta) 15%,var(--s2));color:var(--magenta)}
+.stage.ready .dot{border-color:var(--violet);color:var(--violet);border-style:dashed}
+.stage.skip .dot{opacity:.5;border-style:dashed}
+.stage .sn{font-weight:600;font-size:13.5px;line-height:1.3}
+.stage .st{font-family:var(--mono);font-size:11px;color:var(--fg2)}
+.stage .ss{font-family:var(--mono);font-size:11px}
+.costbox{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.costbox{grid-template-columns:minmax(0,1fr)}}
+.costbox .cb{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--s2);display:flex;flex-direction:column;gap:2px}
+.costbox .cv{font-family:var(--display);font-size:24px;font-weight:700}
+.term .warnl{color:var(--amber)} .term .cyl{color:var(--cyan)}
+.term{max-height:360px;overflow:auto}
+.yaml{max-height:460px}
+.y-k{color:var(--cyan)}
+
+.arch-wrap{overflow-x:auto}
+svg.arch{width:100%;min-width:920px;height:auto;display:block}
+svg.arch .nt{font-family:var(--body);font-size:13.5px;font-weight:600;fill:var(--fg)}
+svg.arch .ns{font-family:var(--mono);font-size:11px;fill:var(--fg2)}
+svg.arch .nh{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;fill:var(--cyan)}
+svg.arch .nl{font-family:var(--mono);font-size:10.5px}
+table.src{min-width:900px}
+table.src td:first-child{font-weight:600}
+table.src td.mono{font-size:12px;color:var(--cyan)}
+.math{gap:8px}
+.math .eq{font-family:var(--mono);font-size:16px;color:var(--fg);background:#05060a;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.math p{font-size:13.5px;color:var(--fg2)}
+.math .ex{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:var(--fg2)}
+.math .ex b{color:var(--lime);font-weight:500}
+.faq{display:flex;flex-direction:column;gap:6px}
+.faq details{border:1px solid var(--line);border-radius:10px;background:var(--s2)}
+.faq summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--mono);color:var(--cyan)}
+.faq details[open] summary::after{content:"−"}
+.faq details[open]{border-color:color-mix(in srgb,var(--cyan) 45%,var(--line))}
+.faq p{padding:0 14px 14px;font-size:14px;color:var(--fg2);max-width:85ch}
+.fsi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:700px){.fsi{grid-template-columns:minmax(0,1fr)}}
+.fsi p{font-size:13.5px;color:var(--fg2);margin-top:2px}
+.fsi b{font-size:14px}
+.cap1{border-color:color-mix(in srgb,var(--violet) 50%,var(--line));background:color-mix(in srgb,var(--violet) 6%,var(--s1))}
+.cap1 p{font-size:14px;color:var(--fg2)}
+.cap1 ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--fg2)}
+.cap1 li b{color:var(--fg)}
+.moments{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.moments{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.moments{grid-template-columns:minmax(0,1fr)}}
+.mo{border:1px solid var(--line);border-top:3px solid var(--c);border-radius:10px;padding:12px;background:var(--s2);display:flex;flex-direction:column;gap:4px}
+.mo b{font-size:14.5px}
+.mo p{font-size:13.5px;color:var(--fg2)}
+.layerc{border-top:3px solid var(--c)}
+.layerc h3{color:var(--c)}
+.lsub{font-size:14px;color:var(--fg2);margin-top:-4px}
+table.stk{min-width:760px;table-layout:fixed}
+table.stk th:nth-child(1){width:25%}table.stk th:nth-child(2){width:19%}table.stk th:nth-child(3){width:44%}table.stk th:nth-child(4){width:12%}
+table.stk td.tn{font-weight:600}
+table.stk td.st{font-size:12px;color:var(--fg2);white-space:nowrap}
+.ty{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid;margin:1px 4px 1px 0;white-space:nowrap}
+.ty-aws{color:var(--cyan);border-color:color-mix(in srgb,var(--cyan) 45%,transparent)}
+.ty-oss{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 45%,transparent)}
+.ty-3p{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 45%,transparent)}
+.princ{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.princ{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.princ{grid-template-columns:minmax(0,1fr)}}
+.princ p{font-size:13.5px;color:var(--fg2);margin-top:2px}
+.eqline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-family:var(--display);font-weight:700;font-size:clamp(16px,2.2vw,22px)}
+.eqline .op{color:var(--fg2);font-family:var(--mono);font-weight:400}
+table.strat{min-width:820px}
+table.strat td{vertical-align:middle}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:middle}
+.barcell{display:flex;align-items:center;gap:10px}
+.bt{display:block;flex:1;height:10px;background:var(--s3);border-radius:5px;overflow:hidden;min-width:120px}
+.bf{display:block;height:100%;border-radius:5px}
+.pct{font-size:12px;width:34px;text-align:right}
+tr.tot td{background:var(--s2)}
+.mech{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.mech{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.mech{grid-template-columns:minmax(0,1fr)}}
+.mech .card{border-top:3px solid var(--c);gap:6px}
+.mech p{font-size:13.5px;color:var(--fg2)}
+.nevercard{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;border:1px solid color-mix(in srgb,var(--lime) 45%,var(--line));background:color-mix(in srgb,var(--lime) 5%,var(--s1));border-radius:12px;padding:16px 18px}
+@media (max-width:900px){.nevercard{grid-template-columns:minmax(0,1fr)}}
+.nevercard b{color:var(--lime)}
+.nevercard p{font-size:13.5px;color:var(--fg2);margin-top:3px}
+footer{font-size:13px;color:var(--fg2);border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">AgentThree · FinOps Lab</div>
+    <h1>AWS cost control for a credit card issuer</h1>
+    <p class="sub">An illustrative credit card issuer on AWS. Tag everything, block untagged spend at deploy time, then make the architecture changes that bring the bill down without touching resilience or PCI controls.</p>
+  </div>
+  <div class="badges">
+    <span class="badge sim">Simulated data</span>
+    <span class="badge">Credit card issuer</span><span class="badge">14 AWS accounts</span>
+    <span class="badge">Oct 2026 billing period</span>
+  </div>
+</header>
+
+<nav class="steps" role="tablist" aria-label="Demo steps">
+  <button class="step" role="tab" data-tab="why" aria-selected="true"><span class="n">00 · Why</span><span class="t">Problem &amp; value</span><span class="d">The case for FinOps</span></button>
+  <button class="step" role="tab" data-tab="overview" aria-selected="false"><span class="n">01 · See</span><span class="t">Spend overview</span><span class="d">Where the money goes</span></button>
+  <button class="step" role="tab" data-tab="tagging" aria-selected="false"><span class="n">02 · Allocate</span><span class="t">Tag compliance</span><span class="d">Who owns each dollar</span></button>
+  <button class="step" role="tab" data-tab="policy" aria-selected="false"><span class="n">03 · Guard</span><span class="t">OPA policies</span><span class="d">Rules as code</span></button>
+  <button class="step" role="tab" data-tab="pipeline" aria-selected="false"><span class="n">04 · Enforce</span><span class="t">CI/CD pipeline</span><span class="d">Block bad deploys</span></button>
+  <button class="step" role="tab" data-tab="optimize" aria-selected="false"><span class="n">05 · Optimize</span><span class="t">Architecture savings</span><span class="d">Drive down the run rate</span></button>
+  <button class="step" role="tab" data-tab="how" aria-selected="false"><span class="n">06 · How</span><span class="t">How it works</span><span class="d">Data, APIs, math</span></button>
+  <button class="step" role="tab" data-tab="stack" aria-selected="false"><span class="n">07 · Stack</span><span class="t">Tech stack</span><span class="d">Tools by layer</span></button>
+</nav>
+
+<!-- 00 WHY -->
+<section class="panel" id="p-why" role="tabpanel">
+  <div class="talk"><b>Talk track</b><span>For a card issuer, the bill isn't the problem. The problem is that cloud cost grows faster than card volume, nobody owns a big slice of it, and engineers find out what their changes cost a month too late. All of that has to be fixed without weakening PCI controls or resilience.</span></div>
+  <div class="thesis">
+    <div>
+      <span class="eyebrow" style="color:var(--magenta)">The problem</span>
+      <h2>The issuer's AWS bill grew 18% in six months. Card transactions grew 6%.</h2>
+      <p>Cost per 1,000 card transactions rose from $2.33 to $2.58. Each swipe costs more to authorize, score for fraud and settle than it did in May, and nobody can say which team or decision is driving it.</p>
+    </div>
+    <div class="gapviz" aria-label="Growth comparison, May to October 2026">
+      <div class="gaprow"><span>AWS spend</span><span class="track"><span class="fill" style="width:90%;background:var(--magenta)"></span></span><span class="amt up">+18%</span></div>
+      <div class="gaprow"><span>Unit cost</span><span class="track"><span class="fill" style="width:55%;background:var(--amber)"></span></span><span class="amt warn">+11%</span></div>
+      <div class="gaprow"><span>Transactions</span><span class="track"><span class="fill" style="width:30%;background:var(--cyan)"></span></span><span class="amt cy">+6%</span></div>
+    </div>
+  </div>
+  <div class="grid g4">
+    <div class="card prob"><span class="label">No ownership</span><span class="stat up">39%</span><p>of monthly spend ($161k) has no team tag, so it can't be charged back or questioned.</p></div>
+    <div class="card prob"><span class="label">Late feedback</span><span class="stat warn">~30 days</span><p>Engineers see the cost of a change on next month's invoice, long after the design is locked in.</p></div>
+    <div class="card prob"><span class="label">Hidden waste</span><span class="stat vi">29%</span><p>Average share of cloud spend organizations estimate is wasted, up from 27% (Flexera 2026 State of the Cloud).</p></div>
+    <div class="card prob"><span class="label">Blind commitments</span><span class="stat cy">1 in 3</span><p>One in three instances is oversized. Buying Savings Plans now would lock in that waste for a year.</p></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-h"><h3>Why FinOps is different at a card issuer</h3><span class="label">Regulated financial services</span></div>
+      <div class="fsi">
+        <div><b class="cy">PCI DSS scope</b><p>Tag the cardholder data environment (<span class="inl">DataClassification=pci</span>) so its cost is visible on its own. Savings changes inside it go through security review first.</p></div>
+        <div><b class="vi">Resilience is fixed</b><p>Multi-AZ, cross-Region DR and capacity for peak authorization stay. Savings come from commitments, right-sizing and non-prod, not from removing redundancy.</p></div>
+        <div><b class="warn">Records retention</b><p>Statements, transaction history and audit logs are kept for years but rarely read. Storage tiering is one of the biggest levers.</p></div>
+        <div><b class="good">Seasonal peaks</b><p>Holiday spending and month-end statement runs spike volume. Commit to the steady baseline only and let autoscaling cover the peaks.</p></div>
+        <div><b class="up">Fraud and risk ML</b><p>Model training and credit-risk batch jobs are bursty, so they suit Spot and scheduling. Real-time fraud scoring is latency-critical and is right-sized carefully.</p></div>
+        <div><b class="cy">Audit evidence</b><p>Policy as code gives auditors a versioned, tested record of every control and every exception, which manual reviews can't.</p></div>
+      </div>
+    </div>
+    <div class="card cap1">
+      <div class="card-h"><h3>Grounded in Capital One experience</h3></div>
+      <p>Capital One is one of the best-known all-in AWS banks, which makes it a useful reference point for how a card issuer runs cloud cost and governance at scale.</p>
+      <ul>
+        <li><b>OPA/Rego policy as code.</b> As a Cloud Security Architect there, I built OPA/Rego guardrails that the Security and Platform teams adopted. Step 03 applies the same pattern to cost.</li>
+        <li><b>Cloud Custodian.</b> Capital One created and open-sourced this rules engine. Its tag-compliance and off-hours policies are a natural fit for the detective and corrective layers here.</li>
+        <li><b>Guardrails in the pipeline.</b> In a regulated bank, controls that run on every change, with an audit trail, beat after-the-fact cleanup.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card-h"><h3>The approach: FinOps Foundation lifecycle</h3><span class="label">Click a phase to jump in</span></div>
+  <div class="phases">
+    <button class="phase" style="--c:var(--cyan)" data-goto="overview"><span class="pn">Inform</span><h3>Make cost visible and owned</h3><span class="pd">Tag standard, bulk tagging, showback by team, unit cost per transaction.</span><span class="pl">Steps 01–02 →</span></button>
+    <button class="phase" style="--c:var(--violet)" data-goto="policy"><span class="pn">Operate</span><h3>Keep it that way automatically</h3><span class="pd">OPA policies in CI/CD block untagged or oversized resources and flag expensive PRs before merge.</span><span class="pl">Steps 03–04 →</span></button>
+    <button class="phase" style="--c:var(--lime)" data-goto="optimize"><span class="pn">Optimize</span><h3>Bring the run rate down</h3><span class="pd">Right-size and schedule first, then commit, then fix the architecture patterns that drive cost.</span><span class="pl">Step 05 →</span></button>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-h"><h3>Value: before and after</h3><span class="label">90-day outcome · simulated</span></div>
+      <div class="tablewrap"><table class="ba">
+        <thead><tr><th>Measure</th><th>Today</th><th>After 90 days</th></tr></thead>
+        <tbody>
+          <tr><td>Spend allocated to a team</td><td class="mono">61%</td><td class="mono">91%</td></tr>
+          <tr><td>When engineers see cost</td><td>Next invoice (~30 days)</td><td>In the pull request</td></tr>
+          <tr><td>Untagged deploys</td><td>Allowed</td><td>Blocked in CI</td></tr>
+          <tr><td>Monthly run rate</td><td class="mono">$412.8k</td><td class="mono">$324.8k</td></tr>
+          <tr><td>Annualized savings</td><td class="mono">—</td><td class="mono">$1.06M</td></tr>
+          <tr><td>Cost per 1,000 card transactions</td><td class="mono">$2.58</td><td class="mono">$2.03</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Who gets what</h3></div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+        <div><b class="cy">Finance</b><p style="color:var(--fg2)">Chargeback by cost center, accurate forecasts, and commitments sized to real usage.</p></div>
+        <div><b class="vi">Engineering</b><p style="color:var(--fg2)">Cost feedback in every PR, clear guardrails instead of after-the-fact tickets, and a ranked savings backlog per team.</p></div>
+        <div><b class="good">Leadership</b><p style="color:var(--fg2)">Cost per transaction and per active account, so growth in card volume can be tied to cloud spend.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>30 / 60 / 90 day plan</h3></div>
+    <div class="plan90">
+      <div><div class="label cy" style="margin-bottom:6px">Days 1–30 · Inform</div><ul><li>Tag standard agreed with Finance</li><li>Cost data exports (CUR 2.0) into a cost dashboard</li><li>Bulk-tag existing resources, activate cost allocation tags</li></ul></div>
+      <div><div class="label vi" style="margin-bottom:6px">Days 31–60 · Operate</div><ul><li>OPA policies plus Infracost in every Terraform pipeline</li><li>SCPs and AWS Config for anything outside Terraform</li><li>Quick wins: gp3, orphan cleanup, non-prod schedules</li></ul></div>
+      <div><div class="label good" style="margin-bottom:6px">Days 61–90 · Optimize</div><ul><li>Right-size from Compute Optimizer data</li><li>Buy Savings Plans against the new baseline</li><li>Architecture backlog: endpoints, tiering, Graviton</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 OVERVIEW -->
+<section class="panel" id="p-overview" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>Spend is up 18% in six months and nearly 4 of every 10 dollars can't be traced to a team. You can't optimize what nobody owns.</span></div>
+  <div class="grid g4">
+    <div class="card kpi"><span class="label">Monthly spend</span><span class="v num">$412.8k</span><span class="f"><span class="up">▲ 3.7%</span> vs Sep · forecast</span></div>
+    <div class="card kpi"><span class="label">Tag coverage</span><span class="v num" id="k-cov">61%</span><span class="f">of spend allocated · target 90%</span></div>
+    <div class="card kpi"><span class="label">Savings selected</span><span class="v num good" id="k-save">$0k</span><span class="f" id="k-save-f">per month</span></div>
+    <div class="card kpi"><span class="label">Unit cost</span><span class="v num cy">$2.58</span><span class="f">per 1,000 card transactions (160M/mo)</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-h"><h3>Monthly spend trend</h3><span class="label">USD · all accounts</span></div>
+      <div class="chart-wrap"><svg id="trend" viewBox="0 0 620 230" width="100%" role="img" aria-label="Monthly AWS spend from May to October 2026, rising from 351k to 412.8k dollars"></svg></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Spend by service</h3><span class="label">Oct 2026</span></div>
+      <div class="bars" id="svc"></div>
+    </div>
+  </div>
+  <div class="card anomaly">
+    <span class="pulse" aria-hidden="true"></span>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h3>Anomaly: NAT Gateway data processing up 38% month over month</h3>
+      <p style="color:var(--fg2);font-size:14px">Account <span class="mono">prod-risk</span>. Fraud model training jobs pull transaction history from S3 through NAT, billed at $0.045 per GB processed. A free S3 gateway endpoint removes that charge. <button class="linkbtn" data-goto="optimize">See the fix in step 05</button></p>
+    </div>
+  </div>
+</section>
+
+<!-- 02 TAGGING -->
+<section class="panel" id="p-tagging" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>Required tags are CostCenter, Owner, Environment and Application. We infer owners from CloudFormation stacks, CloudTrail creators and account ownership, then apply tags in bulk.</span></div>
+  <div class="card">
+    <div class="card-h"><h3>Cost allocation coverage</h3><button class="btn solid" id="apply-all">Apply all suggested tags</button></div>
+    <div class="cov">
+      <span class="big num" id="cov-big">61%</span>
+      <div class="covbar">
+        <div class="covtrack"><div class="covfill" id="cov-fill" style="width:61%"></div><div class="covtarget" style="left:90%" title="Target 90%"></div></div>
+        <div class="covlegend"><span id="cov-alloc">$251.8k allocated</span><span class="warn">Target 90%</span><span id="cov-un">$161.0k unallocated</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-h"><h3>Untagged resource groups</h3><span class="label" id="rows-left">9 open</span></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Resource</th><th>Account</th><th>Missing tags</th><th>Suggested owner</th><th class="r">Monthly</th><th></th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Showback by team</h3><span class="label">Oct 2026</span></div>
+      <div class="bars" id="showback"></div>
+      <p style="font-size:13px;color:var(--fg2)" id="sb-note">Unallocated spend can't be charged back, so no team feels it. Apply tags to watch it move.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 POLICIES -->
+<section class="panel" id="p-policy" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>Cleanup is a one-time fix. Guardrails keep it fixed. These are the kinds of OPA/Rego policies I rolled out at Capital One, applied here to cost. OPA guards every deploy; Cloud Custodian, which Capital One created, enforces the same rules on resources that are already running.</span></div>
+  <div class="card explain">
+    <h3>Two policy engines, two moments</h3>
+    <p><b style="color:var(--fg)">OPA</b> (Open Policy Agent) is an open-source policy engine, a graduated CNCF project. Policies are written in <b style="color:var(--fg)">Rego</b>, a short declarative language: you describe what a violation looks like and OPA finds every match. <b style="color:var(--fg)">Conftest</b> is OPA's command-line tool for testing config files such as Terraform plans, Kubernetes YAML and Dockerfiles. A <code>deny</code> rule fails the build and a <code>warn</code> rule prints a warning but lets it continue.</p>
+    <p><b style="color:var(--fg)">Cloud Custodian</b> is an open-source rules engine that Capital One created and donated to the CNCF. Policies are YAML. It runs as Lambda functions in every account (on a schedule or on CloudTrail events) and acts on resources that already exist: tag, notify, stop, start, snapshot, delete. <b style="color:var(--fg)">OPA stops new waste before deploy. Custodian cleans up what is already running</b>, including anything created outside Terraform.</p>
+  </div>
+  <div class="lib">
+    <div class="plist" id="plist" role="tablist" aria-label="Policies"></div>
+    <div class="card" style="gap:10px">
+      <div class="card-h"><h3 id="pv-title"></h3><span id="pv-sev"></span></div>
+      <p id="pv-why" style="font-size:14px;color:var(--fg2)"></p>
+      <div class="label mono" id="pv-file"></div>
+      <pre class="code" id="pv-code"></pre>
+      <div class="label">Example output</div>
+      <div class="term" id="pv-out" style="min-height:0"></div>
+    </div>
+  </div>
+  <div class="card-h"><h3>Defense in depth: three layers</h3><span class="label">OPA covers Terraform; AWS-native controls cover everything else</span></div>
+  <div class="grid g3">
+    <div class="card layer"><span class="tag cy">Preventive</span><h3>Block before deploy</h3><ul><li>OPA policies on every Terraform plan in CI</li><li>SCPs deny create actions when <span class="mono">aws:RequestTag/CostCenter</span> is absent (console and CLI too)</li></ul></div>
+    <div class="card layer"><span class="tag warn">Detective</span><h3>Catch drift</h3><ul><li>AWS Config <span class="mono">required-tags</span> rule across all accounts</li><li>Tag Policies standardize keys and allowed values</li></ul></div>
+    <div class="card layer"><span class="tag good">Corrective</span><h3>Fix automatically</h3><ul><li>Cloud Custodian (open-sourced by Capital One) for tag compliance and off-hours schedules</li><li>Custodian in CloudTrail mode tags each new resource with its creator</li><li>Custodian notifies owners, then stops untagged or idle resources after a grace period</li><li>Tags activated as cost allocation tags in Billing</li></ul></div>
+  </div>
+</section>
+
+<!-- 04 PIPELINE -->
+<section class="panel" id="p-pipeline" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>Here's a real pull request. Run it once and watch two policies block it and the cost check flag it. Fix the tags, right-size the load-test box, re-run, and it passes. That fix cuts about $790 a month before anything is deployed.</span></div>
+  <div class="card">
+    <div class="card-h"><h3>PR #482 · infra/card-platform · "Add statement archive, risk reports DB and auth load-test rig"</h3><span class="label" id="pipe-state">Not run yet</span></div>
+    <div class="pipe-wrap"><div class="pipe" id="pipe"></div></div>
+    <div class="row">
+      <button class="btn solid" id="run-pipe">Run pipeline</button>
+      <button class="btn lime" id="fix-tags">Fix: add missing tags</button>
+      <button class="btn lime" id="fix-size">Fix: right-size load test</button>
+      <button class="btn" id="reset-pipe">Reset PR</button>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-h"><h3>Pipeline log</h3><span class="label">GitHub Actions · ubuntu-latest</span></div>
+      <div class="term" id="term" aria-live="polite"><span class="dim">Press "Run pipeline" to start.</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Terraform plan · 5 to create</h3></div>
+      <div id="plan" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>Cost impact of this PR</h3><span class="label">Infracost estimate · us-east-1 on-demand · simulated</span></div>
+    <div class="costbox">
+      <div class="cb"><span class="label">As first submitted</span><span class="cv up num">+$1,387/mo</span><span class="rmeta">c7i.8xlarge load test on gp2</span></div>
+      <div class="cb"><span class="label">Current PR</span><span class="cv num" id="cost-now">+$1,387/mo</span><span class="rmeta" id="cost-now-note">Over $1,000: FinOps review requested</span></div>
+      <div class="cb"><span class="label">Caught before merge</span><span class="cv good num" id="cost-saved">$0/mo</span><span class="rmeta" id="cost-saved-yr">Apply the right-size fix</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>The pipeline definition</h3><span class="label mono">.github/workflows/terraform-guardrails.yml</span></div>
+    <pre class="code yaml" id="yaml"></pre>
+  </div>
+</section>
+
+<!-- 05 OPTIMIZE -->
+<section class="panel" id="p-optimize" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>With ownership in place, each team gets a ranked backlog. Order matters: right-size and schedule first, then buy commitments, so you don't commit to waste.</span></div>
+  <div class="card billcard">
+    <div class="card-h"><h3>How the bill comes down</h3><span class="label">All nine levers · simulated</span></div>
+    <div class="eqline"><span>AWS cost</span><span class="op">=</span><span class="cy">how much you run</span><span class="op">×</span><span class="good">how long it runs</span><span class="op">×</span><span class="vi">price per unit</span></div>
+    <p class="lsub">Every lever reduces one of those three, or removes something nobody uses. Turning resources off is only one of six strategies. Totals assume all nine levers; the selector below lets you choose.</p>
+    <div class="tablewrap"><table class="strat">
+      <thead><tr><th>Strategy</th><th>What changes</th><th>Levers</th><th class="r">$k/month</th><th>Share of savings</th></tr></thead>
+      <tbody><tr><td><span class="sw" style="background:var(--cyan)"></span><b>Pay a lower rate</b></td><td class="mono" style="font-size:12px;color:var(--fg2)">Price per hour</td><td>Compute Savings Plan · RIs for the card ledger · Graviton</td><td class="r mono">38.9</td><td class="barcell"><span class="bt"><span class="bf" style="width:100.0%;background:var(--cyan)"></span></span><span class="mono pct">44%</span></td></tr><tr><td><span class="sw" style="background:var(--violet)"></span><b>Run smaller</b></td><td class="mono" style="font-size:12px;color:var(--fg2)">Size</td><td>Right-size 46 oversized instances</td><td class="r mono">14.8</td><td class="barcell"><span class="bt"><span class="bf" style="width:38.0%;background:var(--violet)"></span></span><span class="mono pct">17%</span></td></tr><tr><td><span class="sw" style="background:var(--amber)"></span><b>Store more cheaply</b></td><td class="mono" style="font-size:12px;color:var(--fg2)">Storage class</td><td>Glacier tiers for old records · gp2 to gp3</td><td class="r mono">12.6</td><td class="barcell"><span class="bt"><span class="bf" style="width:32.4%;background:var(--amber)"></span></span><span class="mono pct">14%</span></td></tr><tr><td><span class="sw" style="background:var(--lime)"></span><b>Run fewer hours</b></td><td class="mono" style="font-size:12px;color:var(--fg2)">Time</td><td>Stop dev, test and UAT nights and weekends</td><td class="r mono">11.2</td><td class="barcell"><span class="bt"><span class="bf" style="width:28.8%;background:var(--lime)"></span></span><span class="mono pct">13%</span></td></tr><tr><td><span class="sw" style="background:var(--magenta)"></span><b>Route traffic more cheaply</b></td><td class="mono" style="font-size:12px;color:var(--fg2)">Network path</td><td>S3 gateway endpoint instead of NAT Gateway</td><td class="r mono">6.2</td><td class="barcell"><span class="bt"><span class="bf" style="width:15.9%;background:var(--magenta)"></span></span><span class="mono pct">7%</span></td></tr><tr><td><span class="sw" style="background:var(--fg2)"></span><b>Delete what nobody uses</b></td><td class="mono" style="font-size:12px;color:var(--fg2)">Removal</td><td>Unattached volumes · old snapshots</td><td class="r mono">4.3</td><td class="barcell"><span class="bt"><span class="bf" style="width:11.1%;background:var(--fg2)"></span></span><span class="mono pct">5%</span></td></tr><tr class="tot"><td><b>Total</b></td><td></td><td>21% of the $412.8k monthly bill</td><td class="r mono"><b>88.0</b></td><td></td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="mech">
+    <div class="card" style="--c:var(--cyan)"><span class="label cy">Lower rate</span><h3>Same servers, lower price</h3><p>Commit to a steady amount of usage per hour for one or three years and AWS charges less for it. Nothing changes technically. Graviton lowers the rate by running on cheaper processors. Commit only to the 24/7 baseline, never to peaks.</p></div>
+    <div class="card" style="--c:var(--violet)"><span class="label vi">Run smaller</span><h3>Match size to real use</h3><p>A server averaging 15% CPU drops one size in the same family, roughly halving its hourly price. Compute Optimizer recommends from CloudWatch data; the owning team approves the change.</p></div>
+    <div class="card" style="--c:var(--lime)"><span class="label good">Fewer hours</span><h3>Non-prod sleeps at night</h3><p>Cloud Custodian stops dev, test and UAT at 7pm and starts them at 7am on weekdays: 60 of 168 hours. A stopped server pays nothing for compute but still pays for its disks. RDS restarts itself after 7 days, so Custodian checks hourly.</p></div>
+    <div class="card" style="--c:var(--amber)"><span class="label warn">Cheaper storage</span><h3>Keep records, pay less</h3><p>Statements and audit logs must be kept for years but are rarely read. Lifecycle rules move them to Glacier tiers without deleting anything, and retention locks stay. gp3 disks cost 20% less than gp2.</p></div>
+    <div class="card" style="--c:var(--magenta)"><span class="label up">Cheaper network</span><h3>Skip the NAT toll</h3><p>Private servers reaching S3 through a NAT Gateway pay $0.045 per GB processed. A gateway endpoint carries the same traffic for free and keeps it on the AWS network.</p></div>
+    <div class="card" style="--c:var(--fg2)"><span class="label">Delete unused</span><h3>Stop paying for leftovers</h3><p>Disks attached to nothing and snapshots nobody needs. Custodian snapshots a disk before deleting it and skips anything under a retention hold.</p></div>
+  </div>
+  <div class="nevercard">
+    <div><b>What is never touched</b><p>Production keeps running around the clock. Multi-AZ, cross-Region DR and peak authorization capacity stay. Production gets cheaper only through rate and size, never by being turned off.</p></div>
+    <div><b>The one exception</b><p>A resource missing its required tags gets a notice and is stopped after 3 days if nothing changes. That is a governance control, aimed at stray dev resources, not a savings lever.</p></div>
+    <div><b>How savings are proven</b><p>Estimates start the work; the bill confirms it. After each change, compare billing data before and after.</p></div>
+  </div>
+
+  <div class="savebar">
+    <div class="card kpi"><span class="label">Monthly savings</span><span class="v num good" id="o-mo">$0k</span><span class="f" id="o-count">0 actions selected</span></div>
+    <div class="card kpi"><span class="label">Annualized</span><span class="v num good" id="o-yr">$0</span><span class="f">at full ramp</span></div>
+    <div class="card kpi"><span class="label">New run rate</span><span class="v num cy" id="o-rate">$412.8k</span><span class="f" id="o-pct">0% reduction</span></div>
+    <div class="card kpi"><span class="label">New unit cost</span><span class="v num vi" id="o-unit">$2.58</span><span class="f">per 1,000 card transactions</span></div>
+  </div>
+  <div class="warnbox" id="seq-warn" hidden><b>Sequencing check:</b> <span id="seq-text"></span></div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-h"><h3>Recommendations</h3>
+        <div class="filters" id="filters">
+          <button class="fbtn" aria-pressed="true" data-f="All">All</button>
+          <button class="fbtn" aria-pressed="false" data-f="Commit">Commit</button>
+          <button class="fbtn" aria-pressed="false" data-f="Right-size">Right-size</button>
+          <button class="fbtn" aria-pressed="false" data-f="Architecture">Architecture</button>
+          <button class="fbtn" aria-pressed="false" data-f="Hygiene">Hygiene</button>
+        </div>
+      </div>
+      <div class="recs" id="recs"></div>
+    </div>
+    <div class="card" style="align-self:start">
+      <div class="card-h"><h3>12-month projection</h3><span class="label">USD / month</span></div>
+      <div class="chart-wrap"><svg id="proj" viewBox="0 0 460 260" width="100%" role="img" aria-label="Projected monthly spend, baseline versus optimized"></svg></div>
+      <div class="legend"><span><i style="background:var(--magenta)"></i>Do nothing (+1.5%/mo growth)</span><span><i style="background:var(--lime)"></i>With selected actions</span></div>
+      <p style="font-size:13px;color:var(--fg2)">Savings ramp in: hygiene in month 1, right-sizing by month 2, commitments after right-sizing, architecture changes over 4 months.</p>
+      <p style="font-size:14px" id="cum"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 HOW IT WORKS -->
+<section class="panel" id="p-how" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>Dollars come from billing data, not monitoring. CloudWatch tells us how busy a resource is; the Cost and Usage Report tells us what it cost. The engine joins the two and adds a business metric. OPA guards every deploy, and Cloud Custodian runs in every account to act on what is already running.</span></div>
+  <div class="warnbox"><b>About this demo:</b> nothing here calls AWS. Figures are representative constants and the page does the math live. The architecture below is how the same views are built against a real AWS Organization.</div>
+  <div class="card">
+    <div class="card-h"><h3>Reference architecture</h3><span class="label">AWS-native · read-only access to billing and metrics</span></div>
+    <div class="arch-wrap">
+<svg class="arch" viewBox="0 0 1150 620" role="img" aria-label="Architecture: AWS accounts feed cost and usage data into CUR, Compute Optimizer, EventBridge and Cost Explorer; a FinOps engine on Lambda with Athena produces dashboards, showback, backlogs and commitment purchases; a CI pipeline with OPA and Infracost gates every Terraform change."><defs><marker id="ar-cy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--cyan)"/></marker><marker id="ar-vi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--violet)"/></marker><marker id="ar-li" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--lime)"/></marker><marker id="ar-ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--magenta)"/></marker><marker id="ar-am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker></defs><text class="nh" x="20" y="28">1 · SOURCES</text><text class="nh" x="300" y="28">2 · COLLECT</text><text class="nh" x="580" y="28">3 · ANALYZE</text><text class="nh" x="880" y="28">4 · ACT</text><rect x="20" y="44" width="230" height="340" rx="12" fill="var(--s1)" stroke="var(--line)"/><text class="nt" x="34" y="68">AWS Organization</text><text class="ns" x="34" y="84">14 member accounts</text><rect x="35" y="96" width="200" height="52" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="35" y="106" width="3" height="32" rx="1.5" fill="var(--cyan)"/><text class="nt" x="49" y="118">Workloads</text><text class="ns" x="49" y="136">EC2 · RDS · S3 · EKS</text><rect x="35" y="164" width="200" height="52" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="35" y="174" width="3" height="32" rx="1.5" fill="var(--violet)"/><text class="nt" x="49" y="186">CloudWatch</text><text class="ns" x="49" y="204">CPU, network, memory*</text><rect x="35" y="232" width="200" height="52" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="35" y="242" width="3" height="32" rx="1.5" fill="var(--violet)"/><text class="nt" x="49" y="254">CloudTrail</text><text class="ns" x="49" y="272">who created what, when</text><rect x="35" y="300" width="200" height="52" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="35" y="310" width="3" height="32" rx="1.5" fill="var(--cyan)"/><text class="nt" x="49" y="322">Billing</text><text class="ns" x="49" y="340">cost allocation tags</text><text class="ns" x="34" y="372" style="fill:var(--magenta)">SCPs · Config · Tag Policies</text><rect x="100" y="400" width="150" height="52" rx="8" fill="var(--s2)" stroke="var(--amber)" stroke-opacity=".7"/><rect x="100" y="410" width="3" height="32" rx="1.5" fill="var(--amber)"/><text class="nt" x="114" y="422">Card ledger</text><text class="ns" x="114" y="440">160M txns / month</text><rect x="300" y="60" width="220" height="52" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="300" y="70" width="3" height="32" rx="1.5" fill="var(--cyan)"/><text class="nt" x="314" y="82">Data Exports · CUR 2.0</text><text class="ns" x="314" y="100">hourly, Parquet format</text><rect x="300" y="134" width="220" height="52" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="300" y="144" width="3" height="32" rx="1.5" fill="var(--cyan)"/><text class="nt" x="314" y="156">S3 billing bucket</text><text class="ns" x="314" y="174">partitioned by month</text><rect x="300" y="208" width="220" height="52" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="300" y="218" width="3" height="32" rx="1.5" fill="var(--violet)"/><text class="nt" x="314" y="230">Compute Optimizer</text><text class="ns" x="314" y="248">right-size from usage</text><rect x="300" y="282" width="220" height="52" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="300" y="292" width="3" height="32" rx="1.5" fill="var(--violet)"/><text class="nt" x="314" y="304">EventBridge rule</text><text class="ns" x="314" y="322">on resource create</text><rect x="300" y="356" width="220" height="52" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="300" y="366" width="3" height="32" rx="1.5" fill="var(--cyan)"/><text class="nt" x="314" y="378">Cost Explorer API</text><text class="ns" x="314" y="396">forecasts · anomalies</text><rect x="580" y="96" width="240" height="52" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="580" y="106" width="3" height="32" rx="1.5" fill="var(--cyan)"/><text class="nt" x="594" y="118">Athena + Glue catalog</text><text class="ns" x="594" y="136">SQL over CUR data</text><rect x="580" y="180" width="240" height="92" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="580" y="190" width="3" height="72" rx="1.5" fill="var(--lime)"/><text class="nt" x="594" y="202">FinOps engine</text><text class="ns" x="594" y="220">Python on Lambda, daily</text><text class="ns" x="594" y="236">coverage · showback</text><text class="ns" x="594" y="252">unit cost · savings</text><rect x="580" y="304" width="240" height="52" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="580" y="314" width="3" height="32" rx="1.5" fill="var(--lime)"/><text class="nt" x="594" y="326">Cloud Custodian</text><text class="ns" x="594" y="344">tag · off-hours · cleanup</text><rect x="880" y="60" width="250" height="52" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="880" y="70" width="3" height="32" rx="1.5" fill="var(--lime)"/><text class="nt" x="894" y="82">Cost dashboard</text><text class="ns" x="894" y="100">QuickSight or Grafana</text><rect x="880" y="134" width="250" height="52" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="880" y="144" width="3" height="32" rx="1.5" fill="var(--lime)"/><text class="nt" x="894" y="156">Team showback</text><text class="ns" x="894" y="174">monthly chargeback</text><rect x="880" y="208" width="250" height="52" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="880" y="218" width="3" height="32" rx="1.5" fill="var(--lime)"/><text class="nt" x="894" y="230">Owner backlog</text><text class="ns" x="894" y="248">Jira · Slack alerts</text><rect x="880" y="282" width="250" height="52" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="880" y="292" width="3" height="32" rx="1.5" fill="var(--lime)"/><text class="nt" x="894" y="304">Commitment purchases</text><text class="ns" x="894" y="322">Savings Plans, sized right</text><path d="M250,86 L298,86" fill="none" stroke="var(--cyan)" stroke-width="2"  marker-end="url(#ar-cy)"/><path d="M410,112 L410,132" fill="none" stroke="var(--cyan)" stroke-width="2"  marker-end="url(#ar-cy)"/><path d="M520,160 C550,160 550,122 578,122" fill="none" stroke="var(--cyan)" stroke-width="2"  marker-end="url(#ar-cy)"/><path d="M700,148 L700,178" fill="none" stroke="var(--cyan)" stroke-width="2"  marker-end="url(#ar-cy)"/><path d="M235,190 C268,190 268,234 298,234" fill="none" stroke="var(--violet)" stroke-width="2"  marker-end="url(#ar-vi)"/><path d="M520,234 L578,234" fill="none" stroke="var(--violet)" stroke-width="2"  marker-end="url(#ar-vi)"/><path d="M235,258 C268,258 268,308 298,308" fill="none" stroke="var(--violet)" stroke-width="2"  marker-end="url(#ar-vi)"/><path d="M520,308 C550,308 550,330 578,330" fill="none" stroke="var(--violet)" stroke-width="2"  marker-end="url(#ar-vi)"/><path d="M235,326 C268,326 268,382 298,382" fill="none" stroke="var(--cyan)" stroke-width="2"  marker-end="url(#ar-cy)"/><path d="M520,382 C556,382 556,262 578,262" fill="none" stroke="var(--cyan)" stroke-width="2"  marker-end="url(#ar-cy)"/><path d="M250,426 L566,426 L566,196 L578,196" fill="none" stroke="var(--amber)" stroke-width="2"  marker-end="url(#ar-am)"/><text class="nl" x="380" y="420" style="fill:var(--amber)">transactions / day</text><path d="M820,226 C850,226 850,86 878,86" fill="none" stroke="var(--lime)" stroke-width="2"  marker-end="url(#ar-li)"/><path d="M820,226 C850,226 850,160 878,160" fill="none" stroke="var(--lime)" stroke-width="2"  marker-end="url(#ar-li)"/><path d="M820,226 C850,226 850,234 878,234" fill="none" stroke="var(--lime)" stroke-width="2"  marker-end="url(#ar-li)"/><path d="M820,226 C850,226 850,308 878,308" fill="none" stroke="var(--lime)" stroke-width="2"  marker-end="url(#ar-li)"/><rect x="20" y="486" width="1110" height="124" rx="12" fill="color-mix(in srgb,var(--magenta) 5%,var(--s1))" stroke="color-mix(in srgb,var(--magenta) 45%,var(--line))"/><text class="nh" x="36" y="510" style="fill:var(--magenta)">5 · PREVENT · every pull request</text><rect x="36" y="526" width="160" height="56" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="36" y="536" width="3" height="36" rx="1.5" fill="var(--lime)"/><text class="nt" x="50" y="548">Pull request</text><text class="ns" x="50" y="566">Terraform change</text><path d="M196,554 L216,554" fill="none" stroke="var(--magenta)" stroke-width="2"  marker-end="url(#ar-ma)"/><rect x="218" y="526" width="160" height="56" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="218" y="536" width="3" height="36" rx="1.5" fill="var(--lime)"/><text class="nt" x="232" y="548">terraform plan</text><text class="ns" x="232" y="566">plan.json</text><path d="M378,554 L398,554" fill="none" stroke="var(--magenta)" stroke-width="2"  marker-end="url(#ar-ma)"/><rect x="400" y="526" width="160" height="56" rx="8" fill="var(--s2)" stroke="var(--magenta)" stroke-opacity=".7"/><rect x="400" y="536" width="3" height="36" rx="1.5" fill="var(--magenta)"/><text class="nt" x="414" y="548">OPA · conftest</text><text class="ns" x="414" y="566">Rego + unit tests</text><path d="M560,554 L580,554" fill="none" stroke="var(--magenta)" stroke-width="2"  marker-end="url(#ar-ma)"/><rect x="582" y="526" width="160" height="56" rx="8" fill="var(--s2)" stroke="var(--magenta)" stroke-opacity=".7"/><rect x="582" y="536" width="3" height="36" rx="1.5" fill="var(--magenta)"/><text class="nt" x="596" y="548">Infracost</text><text class="ns" x="596" y="566">cost per month</text><path d="M742,554 L762,554" fill="none" stroke="var(--magenta)" stroke-width="2"  marker-end="url(#ar-ma)"/><rect x="764" y="526" width="160" height="56" rx="8" fill="var(--s2)" stroke="var(--magenta)" stroke-opacity=".7"/><rect x="764" y="536" width="3" height="36" rx="1.5" fill="var(--magenta)"/><text class="nt" x="778" y="548">Review gate</text><text class="ns" x="778" y="566">FinOps if > $1k</text><path d="M924,554 L944,554" fill="none" stroke="var(--magenta)" stroke-width="2"  marker-end="url(#ar-ma)"/><rect x="946" y="526" width="160" height="56" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="946" y="536" width="3" height="36" rx="1.5" fill="var(--lime)"/><text class="nt" x="960" y="548">terraform apply</text><text class="ns" x="960" y="566">on merge to main</text><path d="M1032,526 L1032,470 L60,470 L60,386" fill="none" stroke="var(--lime)" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ar-li)"/><text class="nl" x="600" y="464" style="fill:var(--lime)">deploys only compliant, priced resources</text></svg>
+
+    </div>
+    <div class="legend"><span><i style="background:var(--cyan)"></i>Cost data</span><span><i style="background:var(--violet)"></i>Utilization &amp; events</span><span><i style="background:var(--amber)"></i>Business metric</span><span><i style="background:var(--lime)"></i>Actions</span><span><i style="background:var(--magenta)"></i>Guardrails</span><span>* memory needs the CloudWatch agent</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Where each tool acts</h3><span class="label">One change, four moments</span></div>
+    <div class="moments">
+      <div class="mo" style="--c:var(--magenta)"><span class="label" style="color:var(--magenta)">1 · Pull request</span><b>OPA + Infracost</b><p>Blocks untagged or oversized resources and prices the change before merge.</p></div>
+      <div class="mo" style="--c:var(--violet)"><span class="label" style="color:var(--violet)">2 · Deploy</span><b>SCPs + Tag Policies</b><p>Deny untagged creates at the AWS API, including console and CLI.</p></div>
+      <div class="mo" style="--c:var(--lime)"><span class="label" style="color:var(--lime)">3 · Running</span><b>Cloud Custodian + AWS Config</b><p>Find what slipped through or drifted, notify owners, stop, schedule and clean up.</p></div>
+      <div class="mo" style="--c:var(--cyan)"><span class="label" style="color:var(--cyan)">4 · Bill</span><b>CUR + Cost Explorer</b><p>Measure spend, coverage and savings, and catch anomalies.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>How Cloud Custodian runs</h3><span class="label">Open source · created by Capital One · CNCF</span></div>
+    <div class="arch-wrap">
+<svg class="arch" viewBox="0 0 1150 400" role="img" aria-label="Cloud Custodian runtime: policies in Git are validated in CI and deployed by c7n-org as a Lambda in every account; schedules, CloudTrail events and CloudWatch metrics trigger it; it filters and acts on live resources, sends notifications through c7n-mailer and writes run logs that feed the FinOps dashboard."><defs><marker id="c-cy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--cyan)"/></marker><marker id="c-vi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--violet)"/></marker><marker id="c-li" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--lime)"/></marker><marker id="c-ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--magenta)"/></marker><marker id="c-am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker></defs><text class="nh" x="20" y="22">A · AUTHOR & SHIP</text><text class="nh" x="280" y="22">B · RUNS IN EVERY ACCOUNT</text><text class="nh" x="900" y="22">C · REPORT</text><rect x="20" y="50" width="200" height="56" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="20" y="60" width="3" height="36" rx="1.5" fill="var(--violet)"/><text class="nt" x="34" y="72">Policy repo (Git)</text><text class="ns" x="34" y="90">custodian/*.yml</text><rect x="20" y="140" width="200" height="56" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="20" y="150" width="3" height="36" rx="1.5" fill="var(--violet)"/><text class="nt" x="34" y="162">CI: validate + dry run</text><text class="ns" x="34" y="180">custodian validate</text><rect x="20" y="230" width="200" height="56" rx="8" fill="var(--s2)" stroke="var(--violet)" stroke-opacity=".7"/><rect x="20" y="240" width="3" height="36" rx="1.5" fill="var(--violet)"/><text class="nt" x="34" y="252">c7n-org deploy</text><text class="ns" x="34" y="270">Lambda per account</text><text class="ns" x="20" y="318">Changes go through a pull</text><text class="ns" x="20" y="334">request, like the OPA policies.</text><path d="M120,106 L120,138" fill="none" stroke="var(--violet)" stroke-width="2" marker-end="url(#c-vi)" /><path d="M120,196 L120,228" fill="none" stroke="var(--violet)" stroke-width="2" marker-end="url(#c-vi)" /><rect x="260" y="36" width="610" height="350" rx="12" fill="var(--s1)" stroke="var(--line)"/><text class="nt" x="276" y="60">Each member account × 14 · each Region</text><rect x="280" y="80" width="190" height="56" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="280" y="90" width="3" height="36" rx="1.5" fill="var(--cyan)"/><text class="nt" x="294" y="102">EventBridge schedule</text><text class="ns" x="294" y="120">periodic: hourly, daily</text><rect x="280" y="170" width="190" height="56" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="280" y="180" width="3" height="36" rx="1.5" fill="var(--cyan)"/><text class="nt" x="294" y="192">CloudTrail event rule</text><text class="ns" x="294" y="210">on resource create</text><rect x="280" y="260" width="190" height="56" rx="8" fill="var(--s2)" stroke="var(--cyan)" stroke-opacity=".7"/><rect x="280" y="270" width="3" height="36" rx="1.5" fill="var(--cyan)"/><text class="nt" x="294" y="282">CloudWatch metrics</text><text class="ns" x="294" y="300">CPU for idle filters</text><rect x="510" y="110" width="200" height="104" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="510" y="120" width="3" height="84" rx="1.5" fill="var(--lime)"/><text class="nt" x="524" y="132">Custodian Lambda</text><text class="ns" x="524" y="150">1 · describe resources</text><text class="ns" x="524" y="166">2 · filter: tags, age, metrics</text><text class="ns" x="524" y="182">3 · act: tag, stop, delete</text><rect x="510" y="280" width="200" height="56" rx="8" fill="var(--s2)" stroke="var(--amber)" stroke-opacity=".7"/><rect x="510" y="290" width="3" height="36" rx="1.5" fill="var(--amber)"/><text class="nt" x="524" y="302">Live resources</text><text class="ns" x="524" y="320">EC2 · RDS · EBS · snapshots</text><path d="M470,108 L508,140" fill="none" stroke="var(--cyan)" stroke-width="2" marker-end="url(#c-cy)" /><path d="M470,198 L508,180" fill="none" stroke="var(--cyan)" stroke-width="2" marker-end="url(#c-cy)" /><path d="M470,288 L508,202" fill="none" stroke="var(--cyan)" stroke-width="2" marker-end="url(#c-cy)" /><path d="M610,216 L610,278" fill="none" stroke="var(--lime)" stroke-width="2" marker-end="url(#c-li)" marker-start="url(#c-li)"/><text class="nl" x="618" y="252" style="fill:var(--lime)">describe + act</text><text class="ns" x="276" y="370">Read-mostly IAM role; writes limited to tag, stop, start, snapshot, delete.</text><rect x="900" y="50" width="230" height="56" rx="8" fill="var(--s2)" stroke="var(--magenta)" stroke-opacity=".7"/><rect x="900" y="60" width="3" height="36" rx="1.5" fill="var(--magenta)"/><text class="nt" x="914" y="72">SQS → c7n-mailer</text><text class="ns" x="914" y="90">one mailer, all accounts</text><rect x="900" y="130" width="230" height="56" rx="8" fill="var(--s2)" stroke="var(--magenta)" stroke-opacity=".7"/><rect x="900" y="140" width="3" height="36" rx="1.5" fill="var(--magenta)"/><text class="nt" x="914" y="152">Owner email / Slack</text><text class="ns" x="914" y="170">"stops in 3 days unless…"</text><rect x="900" y="230" width="230" height="56" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="900" y="240" width="3" height="36" rx="1.5" fill="var(--lime)"/><text class="nt" x="914" y="252">Run logs to S3</text><text class="ns" x="914" y="270">matched · actioned · dry run</text><rect x="900" y="310" width="230" height="56" rx="8" fill="var(--s2)" stroke="var(--lime)" stroke-opacity=".7"/><rect x="900" y="320" width="3" height="36" rx="1.5" fill="var(--lime)"/><text class="nt" x="914" y="332">FinOps dashboard</text><text class="ns" x="914" y="350">actions taken · $ saved</text><path d="M710,140 C800,140 820,78 898,78" fill="none" stroke="var(--magenta)" stroke-width="2" marker-end="url(#c-ma)" /><text class="nl" x="780" y="118" style="fill:var(--magenta)">notify</text><path d="M1015,106 L1015,128" fill="none" stroke="var(--magenta)" stroke-width="2" marker-end="url(#c-ma)" /><path d="M710,190 C800,190 820,258 898,258" fill="none" stroke="var(--lime)" stroke-width="2" marker-end="url(#c-li)" /><text class="nl" x="780" y="212" style="fill:var(--lime)">results</text><path d="M1015,286 L1015,308" fill="none" stroke="var(--lime)" stroke-width="2" marker-end="url(#c-li)" /><path d="M220,258 L258,258" fill="none" stroke="var(--violet)" stroke-width="2" marker-end="url(#c-vi)" /></svg>
+
+    </div>
+    <p style="font-size:14px;color:var(--fg2);max-width:90ch">Policies live in Git and ship like code. <span class="inl">c7n-org</span> deploys each policy as a Lambda function into every account and Region. A schedule or a CloudTrail event triggers it; it lists matching resources, filters them by tags, age or CloudWatch metrics, then acts. Notifications go through one central mailer, and every run writes what it matched and changed to S3, which is how the dashboard counts actions and savings.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Cloud Custodian in each demo step</h3><span class="label">Policy · trigger · action · how it's measured</span></div>
+    <div class="tablewrap"><table class="src">
+      <thead><tr><th>Demo step</th><th>Custodian policy</th><th>Trigger (mode)</th><th>What it does</th><th>How the result is measured</th></tr></thead>
+      <tbody>
+        <tr><td>02 · Tag compliance</td><td class="mono">ec2-auto-tag-creator</td><td>CloudTrail event: RunInstances</td><td>Tags each new instance with the identity that launched it</td><td>Owner known for new resources; feeds the suggested-owner column</td></tr>
+        <tr><td>02 · Tag compliance</td><td class="mono">ec2-untagged-mark-for-stop<br>ec2-untagged-stop</td><td>Schedule: daily</td><td>Notifies the owner, stops the instance after 3 days if tags are still missing</td><td>Tag coverage % in CUR (61% → 91%)</td></tr>
+        <tr><td>03 · Guardrails</td><td class="mono">same tag policies</td><td>CloudTrail event</td><td>Catches resources created in the console or CLI, which OPA never sees</td><td>Count of untagged creates per week, trending to zero</td></tr>
+        <tr><td>05 · Scheduling</td><td class="mono">nonprod-*-offhours-stop<br>nonprod-*-onhours-start</td><td>Schedule: hourly</td><td>Stops dev, test and UAT EC2 and RDS at 7pm; starts them at 7am on weekdays (ET)</td><td>Hours removed × hourly price ≈ $11.2k/month</td></tr>
+        <tr><td>05 · Hygiene</td><td class="mono">ebs-unattached-30d<br>ebs-snapshots-older-than-180d</td><td>Schedule: daily</td><td>Snapshots then deletes unattached volumes; deletes old unused snapshots; skips RetentionHold</td><td>GB removed × price ≈ $4.3k/month</td></tr>
+        <tr><td>05 · Hygiene</td><td class="mono">gp2-volumes-report</td><td>Schedule: weekly</td><td>Notifies owners of gp2 volumes to migrate to gp3</td><td>GB migrated × $0.02 ≈ $3.9k/month</td></tr>
+        <tr><td>05 · Right-sizing</td><td class="mono">ec2-low-cpu-14d</td><td>Schedule: weekly</td><td>Flags instances under 5% average CPU for 14 days and notifies the owner</td><td>Feeds each team's backlog alongside Compute Optimizer</td></tr>
+      </tbody>
+    </table></div>
+    <p style="font-size:13.5px;color:var(--fg2)">Custodian doesn't analyze the bill, estimate the cost of a change, or check Terraform plans. CUR and Cost Explorer, Infracost and OPA cover those.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Where each number comes from</h3><span class="label">Source · API · calculation</span></div>
+    <div class="tablewrap"><table class="src">
+      <thead><tr><th>Demo view</th><th>Real data source</th><th>API or service</th><th>Calculation</th></tr></thead>
+      <tbody>
+        <tr><td>Monthly spend, trend, by service</td><td>Cost and Usage Report (CUR 2.0)</td><td class="mono">Athena SQL · ce:GetCostAndUsage</td><td>Sum of <span class="inl">line_item_unblended_cost</span> by month and service (amortized view spreads Savings Plan fees)</td></tr>
+        <tr><td>Forecast</td><td>Cost Explorer</td><td class="mono">ce:GetCostForecast</td><td>AWS forecast model over past usage</td></tr>
+        <tr><td>Anomaly alert</td><td>Cost Anomaly Detection</td><td class="mono">ce:GetAnomalies</td><td>AWS model flags spend outside normal range per service, account or tag</td></tr>
+        <tr><td>Tag coverage %</td><td>CUR <span class="inl">resource_tags</span> column</td><td class="mono">Athena SQL</td><td>Spend with a CostCenter tag ÷ total spend. Only tags activated as cost allocation tags appear</td></tr>
+        <tr><td>Untagged resource list</td><td>Resource inventory</td><td class="mono">tag:GetResources · AWS Config</td><td>Resources missing any of the four required keys</td></tr>
+        <tr><td>Off-hours schedules, untagged cleanup, waste</td><td>Live resource inventory, CloudTrail events</td><td class="mono">Cloud Custodian (c7n-org, Lambda per account)</td><td>Policy filters select resources; actions tag, notify, stop or delete. Savings = hours or GB removed × price</td></tr>
+        <tr><td>Suggested owner</td><td>CloudTrail, CloudFormation</td><td class="mono">cloudtrail:LookupEvents · cloudformation:DescribeStacks</td><td>Creator role, owning stack, or account owner</td></tr>
+        <tr><td>Right-sizing</td><td>CloudWatch metrics</td><td class="mono">compute-optimizer:GetEC2InstanceRecommendations</td><td>(current $/hr − recommended $/hr) × 730</td></tr>
+        <tr><td>Savings Plan</td><td>Past on-demand usage</td><td class="mono">ce:GetSavingsPlansPurchaseRecommendation</td><td>Covered on-demand spend × plan discount, 7/30/60-day lookback</td></tr>
+        <tr><td>NAT Gateway fix</td><td>CUR usage type <span class="inl">NatGateway-Bytes</span>, VPC Flow Logs</td><td class="mono">Athena SQL</td><td>GB from NAT to S3 × $0.045/GB</td></tr>
+        <tr><td>S3 tiering</td><td>S3 Storage Lens, Storage Class Analysis</td><td class="mono">Storage Lens dashboard / export</td><td>GB moved × ($0.023 − $0.004) per GB-month</td></tr>
+        <tr><td>Cost of a pull request</td><td>Terraform plan + AWS public price list</td><td class="mono">Infracost CLI</td><td>On-demand $/hr × 730; usage-priced items need a usage file</td></tr>
+        <tr><td>Unit cost</td><td>CUR + card transaction ledger</td><td class="mono">Athena join</td><td>Total spend ÷ card transactions × 1,000</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card-h"><h3>The math, worked</h3><span class="label">us-east-1 on-demand list prices</span></div>
+  <div class="grid g3">
+    <div class="card math"><span class="label cy">Hourly to monthly</span><div class="eq">$/hr × 730 = $/mo</div><p>AWS bills compute by the hour; 730 is the average hours in a month (8,760 ÷ 12).</p><div class="ex">c7i.8xlarge: $1.428 × 730 = <b>$1,042</b><br>c7i.2xlarge: $0.357 × 730 = <b>$261</b></div></div>
+    <div class="card math"><span class="label vi">Right-size savings</span><div class="eq">(old − new $/hr) × 730</div><p>Compute Optimizer suggests the new size from CloudWatch utilization; pricing comes from the price list.</p><div class="ex">8xlarge → 2xlarge: $1,042 − $261 = <b>$781/mo</b><br>+ 500 GB gp2 → gp3: $50 − $40 = <b>$10</b></div></div>
+    <div class="card math"><span class="label good">Scheduling</span><div class="eq">1 − on hours ÷ 168</div><p>Non-prod runs 7am–7pm on weekdays instead of around the clock.</p><div class="ex">12 h × 5 days = 60 of 168 hours<br>Hours removed: <b>64%</b> of non-prod compute</div></div>
+    <div class="card math"><span class="label warn">Storage</span><div class="eq">GB × price difference</div><p>gp3 is $0.08 vs gp2 $0.10 per GB-month. Glacier Instant Retrieval is $0.004 vs Standard $0.023.</p><div class="ex">gp2 → gp3 = <b>20%</b> cheaper per GB<br>Standard → Glacier IR ≈ <b>83%</b> cheaper per GB</div></div>
+    <div class="card math"><span class="label up">Tag coverage</span><div class="eq">tagged $ ÷ total $</div><p>Measured on spend, not resource count, because one database matters more than a hundred tiny volumes.</p><div class="ex">$251.8k ÷ $412.8k = <b>61%</b><br>After tagging: $375.8k ÷ $412.8k = <b>91%</b></div></div>
+    <div class="card math"><span class="label cy">Unit cost</span><div class="eq">spend ÷ units × 1,000</div><p>The number leadership cares about. It shows whether growth is getting cheaper or more expensive per transaction.</p><div class="ex">$412.8k ÷ 160M × 1,000 = <b>$2.58</b><br>After: $324.8k ÷ 160M × 1,000 = <b>$2.03</b></div></div>
+  </div>
+
+</section>
+
+<!-- 07 STACK -->
+<section class="panel" id="p-stack" role="tabpanel" hidden>
+  <div class="talk"><b>Talk track</b><span>The stack is AWS-native for data and enforcement, open source for policy, and everything lives in Git. Nothing here locks the bank into a FinOps vendor, and the only component that changes resources is Cloud Custodian, through reviewed policies.</span></div>
+  <div class="grid g4">
+    <div class="card kpi"><span class="label">Components</span><span class="v num">33</span><span class="f">across five layers (a few count as two types)</span></div>
+    <div class="card kpi"><span class="label">AWS-native</span><span class="v num cy">22</span><span class="f">managed services, no extra vendor</span></div>
+    <div class="card kpi"><span class="label">Open source</span><span class="v num good">9</span><span class="f">OPA, Custodian, Terraform and more</span></div>
+    <div class="card kpi"><span class="label">Third-party</span><span class="v num warn">6</span><span class="f">GitHub, Jira, Slack: swappable</span></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>Design principles</h3></div>
+    <div class="princ">
+      <div><b class="cy">AWS-native first</b><p>Billing, metrics, events and enforcement use managed AWS services the bank already runs.</p></div>
+      <div><b class="good">Open source for policy</b><p>OPA and Cloud Custodian keep rules portable and reviewable, with no vendor lock-in.</p></div>
+      <div><b class="vi">Everything as code</b><p>Infrastructure, policies and tests live in Git and change through pull requests.</p></div>
+      <div><b class="warn">Read-only by default</b><p>Analysis needs read access only. Custodian is the one component that acts, within narrow permissions.</p></div>
+    </div>
+  </div>
+  <div class="card layerc" style="--c:var(--cyan)">
+    <div class="card-h"><h3>Cost data and analytics</h3><span class="label">7 components</span></div>
+    <p class="lsub">Where every dollar figure comes from.</p>
+    <div class="tablewrap"><table class="stk"><thead><tr><th>Component</th><th>Type</th><th>Role in the solution</th><th>Demo step</th></tr></thead><tbody><tr><td class="tn">AWS Data Exports (CUR 2.0)</td><td><span class="ty ty-aws">AWS-native</span></td><td>Hourly cost and usage line items with resource tags, delivered as Parquet</td><td class="mono st">01 · 02 · 05</td></tr><tr><td class="tn">Amazon S3</td><td><span class="ty ty-aws">AWS-native</span></td><td>Stores the cost data, Custodian run logs and long-retention records</td><td class="mono st">01 · 06</td></tr><tr><td class="tn">AWS Glue Data Catalog</td><td><span class="ty ty-aws">AWS-native</span></td><td>Table definitions so the cost data can be queried with SQL</td><td class="mono st">06</td></tr><tr><td class="tn">Amazon Athena</td><td><span class="ty ty-aws">AWS-native</span></td><td>SQL over the cost data: spend by team, tag coverage, unit cost, NAT analysis</td><td class="mono st">01 · 02 · 06</td></tr><tr><td class="tn">AWS Cost Explorer API</td><td><span class="ty ty-aws">AWS-native</span></td><td>Forecasts and Savings Plans purchase recommendations</td><td class="mono st">01 · 05</td></tr><tr><td class="tn">AWS Cost Anomaly Detection</td><td><span class="ty ty-aws">AWS-native</span></td><td>Flags unusual spend by service, account or tag</td><td class="mono st">01</td></tr><tr><td class="tn">Amazon QuickSight or Grafana</td><td><span class="ty ty-aws">AWS-native</span><span class="ty ty-oss">Open source</span></td><td>Cost dashboards, team showback and unit-cost trends</td><td class="mono st">01 · 02</td></tr></tbody></table></div>
+  </div>
+  <div class="card layerc" style="--c:var(--violet)">
+    <div class="card-h"><h3>Usage, inventory and events</h3><span class="label">8 components</span></div>
+    <p class="lsub">What is running, how busy it is, and who created it.</p>
+    <div class="tablewrap"><table class="stk"><thead><tr><th>Component</th><th>Type</th><th>Role in the solution</th><th>Demo step</th></tr></thead><tbody><tr><td class="tn">Amazon CloudWatch</td><td><span class="ty ty-aws">AWS-native</span></td><td>CPU, network and memory metrics for right-sizing and idle checks</td><td class="mono st">05</td></tr><tr><td class="tn">AWS Compute Optimizer</td><td><span class="ty ty-aws">AWS-native</span></td><td>Right-sizing recommendations from CloudWatch history</td><td class="mono st">05</td></tr><tr><td class="tn">AWS CloudTrail</td><td><span class="ty ty-aws">AWS-native</span></td><td>Who created what and when; triggers auto-tagging</td><td class="mono st">02</td></tr><tr><td class="tn">Amazon EventBridge</td><td><span class="ty ty-aws">AWS-native</span></td><td>Schedules and event rules that trigger Custodian and the engine</td><td class="mono st">03 · 06</td></tr><tr><td class="tn">Resource Groups Tagging API</td><td><span class="ty ty-aws">AWS-native</span></td><td>Inventory of resources and their tags</td><td class="mono st">02</td></tr><tr><td class="tn">AWS Config</td><td><span class="ty ty-aws">AWS-native</span></td><td>Required-tags rule and drift detection across accounts</td><td class="mono st">03</td></tr><tr><td class="tn">S3 Storage Lens</td><td><span class="ty ty-aws">AWS-native</span></td><td>Access patterns that size the storage tiering lever</td><td class="mono st">05</td></tr><tr><td class="tn">VPC Flow Logs</td><td><span class="ty ty-aws">AWS-native</span></td><td>Shows which traffic flows through NAT to S3</td><td class="mono st">01 · 05</td></tr></tbody></table></div>
+  </div>
+  <div class="card layerc" style="--c:var(--magenta)">
+    <div class="card-h"><h3>Governance and guardrails</h3><span class="label">7 components</span></div>
+    <p class="lsub">Rules that keep tagging and cost under control.</p>
+    <div class="tablewrap"><table class="stk"><thead><tr><th>Component</th><th>Type</th><th>Role in the solution</th><th>Demo step</th></tr></thead><tbody><tr><td class="tn">AWS Organizations</td><td><span class="ty ty-aws">AWS-native</span></td><td>One bill across 14 accounts; root for SCPs and Tag Policies</td><td class="mono st">03</td></tr><tr><td class="tn">Service control policies</td><td><span class="ty ty-aws">AWS-native</span></td><td>Deny untagged creates at the AWS API, including console and CLI</td><td class="mono st">03</td></tr><tr><td class="tn">Tag Policies</td><td><span class="ty ty-aws">AWS-native</span></td><td>Standard tag keys and allowed values across the organization</td><td class="mono st">02 · 03</td></tr><tr><td class="tn">Open Policy Agent (OPA) + Rego</td><td><span class="ty ty-oss">Open source</span></td><td>Policy engine and language for pipeline checks; CNCF graduated</td><td class="mono st">03 · 04</td></tr><tr><td class="tn">conftest</td><td><span class="ty ty-oss">Open source</span></td><td>Runs Rego policies against the Terraform plan and Infracost output</td><td class="mono st">04</td></tr><tr><td class="tn">Cloud Custodian</td><td><span class="ty ty-oss">Open source</span></td><td>Runtime rules engine: tag, notify, stop, schedule, clean up. Created by Capital One</td><td class="mono st">03 · 06</td></tr><tr><td class="tn">c7n-org + c7n-mailer</td><td><span class="ty ty-oss">Open source</span></td><td>Run Custodian in every account; send owner notifications</td><td class="mono st">03 · 06</td></tr></tbody></table></div>
+  </div>
+  <div class="card layerc" style="--c:var(--amber)">
+    <div class="card-h"><h3>Delivery pipeline</h3><span class="label">6 components</span></div>
+    <p class="lsub">Every infrastructure change passes through here.</p>
+    <div class="tablewrap"><table class="stk"><thead><tr><th>Component</th><th>Type</th><th>Role in the solution</th><th>Demo step</th></tr></thead><tbody><tr><td class="tn">Terraform</td><td><span class="ty ty-oss">Open source</span></td><td>Infrastructure as code; the plan JSON is what OPA and Infracost read</td><td class="mono st">04</td></tr><tr><td class="tn">GitHub Actions</td><td><span class="ty ty-3p">Third-party</span></td><td>Runs validate, policy tests, plan, policy and cost checks on every pull request</td><td class="mono st">04</td></tr><tr><td class="tn">GitHub OIDC + IAM role</td><td><span class="ty ty-aws">AWS-native</span><span class="ty ty-3p">Third-party</span></td><td>Short-lived AWS credentials; no stored keys</td><td class="mono st">04</td></tr><tr><td class="tn">Infracost</td><td><span class="ty ty-oss">Open source</span><span class="ty ty-3p">Third-party</span></td><td>Monthly cost estimate of each change, posted on the pull request</td><td class="mono st">04</td></tr><tr><td class="tn">Docker</td><td><span class="ty ty-oss">Open source</span></td><td>Runs the official conftest image in the pipeline</td><td class="mono st">04</td></tr><tr><td class="tn">Branch protection</td><td><span class="ty ty-3p">Third-party</span></td><td>Requires the policy and cost checks to pass before merge</td><td class="mono st">04</td></tr></tbody></table></div>
+  </div>
+  <div class="card layerc" style="--c:var(--lime)">
+    <div class="card-h"><h3>Automation and notifications</h3><span class="label">5 components</span></div>
+    <p class="lsub">Turning findings into action by the right owner.</p>
+    <div class="tablewrap"><table class="stk"><thead><tr><th>Component</th><th>Type</th><th>Role in the solution</th><th>Demo step</th></tr></thead><tbody><tr><td class="tn">AWS Lambda</td><td><span class="ty ty-aws">AWS-native</span></td><td>Runs the FinOps engine and every Custodian policy</td><td class="mono st">06</td></tr><tr><td class="tn">Python</td><td><span class="ty ty-oss">Open source</span></td><td>FinOps engine: coverage, showback, unit cost, savings tracking</td><td class="mono st">06</td></tr><tr><td class="tn">Amazon SQS</td><td><span class="ty ty-aws">AWS-native</span></td><td>Queue between Custodian policies and c7n-mailer</td><td class="mono st">06</td></tr><tr><td class="tn">Email (Amazon SES) and Slack</td><td><span class="ty ty-aws">AWS-native</span><span class="ty ty-3p">Third-party</span></td><td>Owner notifications and alerts</td><td class="mono st">02 · 06</td></tr><tr><td class="tn">Jira</td><td><span class="ty ty-3p">Third-party</span></td><td>Each team's savings backlog</td><td class="mono st">05</td></tr></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>About this demo</h3><span class="label">How the page itself is built</span></div>
+    <p style="font-size:14px;color:var(--fg2);max-width:90ch">A single self-contained HTML file with inline CSS, JavaScript and SVG diagrams. It has no backend and makes no AWS calls: all figures are simulated constants, and the pipeline runs, policy outputs and savings math are computed in the browser. Tools are interchangeable where noted: GitLab CI, Jenkins or AWS CodePipeline can replace GitHub Actions, and QuickSight or Grafana can serve the dashboards.</p>
+  </div>
+</section>
+
+<footer>Simulated environment for demonstration. The card issuer is illustrative and unnamed; accounts and figures are simulated. Pricing references reflect published AWS rates and typical outcomes, not a guarantee.</footer>
+</div>
+
+<script>
+(function(){
+const BASE=412.8, TXN=160000;
+const $=s=>document.querySelector(s);
+const k=v=>'$'+v.toFixed(1)+'k';
+
+/* ---------- state ---------- */
+const teams=[
+  {name:'Platform',base:92,color:'var(--cyan)'},
+  {name:'Card Auth',base:68,color:'var(--violet)'},
+  {name:'Fraud & Risk',base:70.8,color:'var(--amber)'},
+  {name:'Digital',base:21,color:'var(--lime)'}
+];
+const rows=[
+  {r:'EC2 · 38 instances',m:'m6i.2xlarge, c6i.4xlarge',acct:'prod-shared',miss:['CostCenter','Application'],team:'Platform',why:'CloudFormation stack platform-core',cost:31.2},
+  {r:'EBS · 214 volumes',m:'attached to platform hosts',acct:'prod-shared',miss:['CostCenter','Owner'],team:'Platform',why:'Inherited from attached instance',cost:6.8},
+  {r:'S3 · txn-history-raw',m:'1.2 PB, Standard class',acct:'prod-risk',miss:['CostCenter','Owner'],team:'Fraud & Risk',why:'CloudTrail creator: risk-ml-ci role',cost:18.4},
+  {r:'NAT Gateway · 6',m:'3 AZs × 2 VPCs',acct:'prod-risk',miss:['CostCenter','Owner','Environment','Application'],team:'Fraud & Risk',why:'VPC owned by risk analytics',cost:16.8},
+  {r:'EKS · ng-fraud-score-*',m:'node groups, real-time scoring',acct:'prod-shared',miss:['CostCenter'],team:'Fraud & Risk',why:'Namespace labels via split cost allocation',cost:8.8},
+  {r:'RDS · card-ledger-replica',m:'db.r6g.4xlarge, Multi-AZ',acct:'prod-cardauth',miss:['Environment','Application'],team:'Card Auth',why:'Account owner: card authorization',cost:14.9},
+  {r:'ElastiCache · auth-velocity-cache',m:'cache.r6g.xlarge × 6',acct:'prod-cardauth',miss:['CostCenter','Owner'],team:'Card Auth',why:'Security group ref from auth-api',cost:12.1},
+  {r:'CloudFront · 4 distributions',m:'cardholder web app, statements',acct:'prod-digital',miss:['CostCenter'],team:'Digital',why:'Origin bucket tagged Digital',cost:9.4},
+  {r:'ALB · mobile-api-*',m:'3 load balancers',acct:'prod-digital',miss:['Owner','Application'],team:'Digital',why:'CloudFormation stack mobile-edge',cost:5.6}
+];
+rows.forEach(r=>r.applied=false);
+
+const recs=[
+  {id:'sp',cat:'Commit',t:'Compute Savings Plan, 1-year no upfront',d:'Cover ~70% of the steady EC2, Fargate and Lambda baseline that runs authorization, fraud scoring and servicing. Discount applies across instance families and Regions.',s:21.4,e:'Low effort',risk:'Low risk',on:true},
+  {id:'rds',cat:'Commit',t:'Reserved Instances for the production card ledger (Aurora)',d:'Ledger clusters run 24/7 on r6g with flat utilization for 9 months. Multi-AZ stays in place for resilience; reserve it instead of shrinking it.',s:7.9,e:'Low effort',risk:'Low risk',on:false},
+  {id:'rs',cat:'Right-size',t:'Right-size 46 over-provisioned EC2 instances',d:'p95 CPU under 20% for 30 days per Compute Optimizer. Drop one size within the same family.',s:14.8,e:'Medium effort',risk:'Low risk',on:true},
+  {id:'sch',cat:'Right-size',t:'Schedule dev, test and UAT off nights and weekends',d:'Non-prod runs 24/7 today. A 7am–7pm weekday schedule removes ~64% of hours. Cloud Custodian off-hours policies, open-sourced by Capital One, handle this pattern.',s:11.2,e:'Low effort',risk:'Low risk',on:true},
+  {id:'grav',cat:'Architecture',t:'Move stateless services to Graviton (m6i → m7g)',d:'Rewards, statements and card-servicing APIs are containerized Java and Go. Rebuild for arm64 with multi-arch images; keep the authorization path on x86 until load-tested.',s:9.6,e:'Medium effort',risk:'Medium risk',on:false},
+  {id:'s3',cat:'Architecture',t:'Lifecycle 7-year statement and audit-log retention to Glacier tiers',d:'380 TB of statements, transaction history and audit logs must be kept for years but is rarely read after 90 days. Move to Glacier Instant Retrieval, then Deep Archive; Object Lock retention stays in place.',s:8.7,e:'Low effort',risk:'Low risk',on:false},
+  {id:'vpce',cat:'Architecture',t:'Add S3 and DynamoDB gateway endpoints in prod-risk',d:'Fraud model training traffic to S3 bypasses NAT, and stays on the AWS network, removing the $0.045/GB processing charge. Gateway endpoints have no hourly cost.',s:6.2,e:'Low effort',risk:'Low risk',on:false},
+  {id:'gp3',cat:'Hygiene',t:'Convert 612 EBS volumes from gp2 to gp3',d:'gp3 is ~20% cheaper per GB with a 3,000 IOPS baseline. Online modification, no downtime.',s:3.9,e:'Low effort',risk:'Low risk',on:true},
+  {id:'orph',cat:'Hygiene',t:'Delete unattached volumes and snapshots older than 180 days',d:'188 unattached volumes and 4,100 snapshots with no AMI or retention tag. Check against the records-retention schedule, then delete with Owner approval.',s:4.3,e:'Low effort',risk:'Low risk',on:true}
+];
+const ramp={Hygiene:[1,1,1],'Right-size':[.5,1,1],Commit:[0,1,1],Architecture:[0,.33,.66,1]};
+let filter='All';
+
+/* ---------- tabs ---------- */
+const TABS=['why','overview','tagging','policy','pipeline','optimize','how','stack'];
+const tabs=[...document.querySelectorAll('.step')];
+function show(id){
+  tabs.forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===id?'true':'false'));
+  TABS.forEach(p=>{$('#p-'+p).hidden=p!==id});
+  try{history.replaceState(null,'','#'+id)}catch(e){}
+}
+tabs.forEach(t=>t.addEventListener('click',()=>show(t.dataset.tab)));
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>{show(b.dataset.goto);window.scrollTo({top:0,behavior:'smooth'})}));
+const h=(location.hash||'').slice(1); if(TABS.includes(h)) show(h);
+
+/* ---------- overview charts ---------- */
+(function trend(){
+  const pts=[['May',351],['Jun',362],['Jul',371],['Aug',384],['Sep',398],['Oct',412.8]];
+  const W=620,H=230,L=56,R=20,T=16,B=34,min=300,max=450;
+  const x=i=>L+i*(W-L-R)/(pts.length-1), y=v=>T+(max-v)*(H-T-B)/(max-min);
+  let s='';
+  [300,350,400,450].forEach(v=>{s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">$${v}k</text>`});
+  const line=pts.map((p,i)=>`${x(i)},${y(p[1])}`).join(' ');
+  s+=`<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--cyan)" stop-opacity=".35"/><stop offset="1" stop-color="var(--cyan)" stop-opacity="0"/></linearGradient></defs>`;
+  s+=`<polygon points="${x(0)},${y(min)} ${line} ${x(pts.length-1)},${y(min)}" fill="url(#ga)"/>`;
+  s+=`<polyline points="${line}" fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  pts.forEach((p,i)=>{s+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle">${p[0]}</text>`; s+=`<circle cx="${x(i)}" cy="${y(p[1])}" r="${i===pts.length-1?5:3}" fill="${i===pts.length-1?'var(--magenta)':'var(--cyan)'}"/>`});
+  s+=`<text x="${x(5)-8}" y="${y(412.8)-12}" text-anchor="end" style="fill:var(--fg);font-size:12px">$412.8k forecast</text>`;
+  $('#trend').innerHTML=s;
+})();
+(function svc(){
+  const d=[['EC2',168],['RDS / Aurora',72],['S3',41],['Data transfer · NAT',38],['EKS',29],['CloudWatch',14],['Lambda',9],['Other',41.8]];
+  $('#svc').innerHTML=d.map(([n,v])=>`<div class="sbar"><span>${n}</span><span class="track"><span class="fill" style="width:${v/168*100}%;${n.startsWith('Data')?'background:var(--magenta)':''}"></span></span><span class="amt">${k(v)}</span></div>`).join('');
+})();
+
+/* ---------- tagging ---------- */
+function renderTagging(){
+  const moved=rows.filter(r=>r.applied).reduce((a,r)=>a+r.cost,0);
+  const un=161-moved, alloc=BASE-un, cov=Math.round(alloc/BASE*100);
+  $('#cov-big').textContent=cov+'%'; $('#cov-big').style.color=cov>=90?'var(--lime)':'var(--fg)';
+  $('#cov-fill').style.width=cov+'%';
+  $('#cov-alloc').textContent=k(alloc)+' allocated';
+  $('#cov-un').textContent=k(un)+' unallocated';
+  $('#k-cov').textContent=cov+'%'; $('#k-cov').className='v num '+(cov>=90?'good':'');
+  const open=rows.filter(r=>!r.applied).length;
+  $('#rows-left').textContent=open?open+' open':'All tagged';
+  $('#apply-all').disabled=!open;
+  $('#tbody').innerHTML=rows.map((r,i)=>`<tr class="${r.applied?'applied':''}">
+    <td><div class="rname">${r.r}</div><div class="rmeta">${r.m}</div></td>
+    <td class="mono" style="font-size:13px">${r.acct}</td>
+    <td>${r.applied?r.miss.map(t=>`<span class="chip ok">${t}</span>`).join(''):r.miss.map(t=>`<span class="chip miss">${t}</span>`).join('')}</td>
+    <td><div style="font-weight:600">${r.team}</div><div class="rmeta">${r.why}</div></td>
+    <td class="r mono">${k(r.cost)}</td>
+    <td class="r">${r.applied?'<span class="done">✓ Tagged</span>':`<button class="btn" data-row="${i}">Apply</button>`}</td></tr>`).join('');
+  const maxv=teams.reduce((m,t)=>Math.max(m,t.base+rows.filter(r=>r.applied&&r.team===t.name).reduce((a,r)=>a+r.cost,0)),un);
+  const scale=Math.max(maxv,165);
+  $('#showback').innerHTML=teams.map(t=>{const v=t.base+rows.filter(r=>r.applied&&r.team===t.name).reduce((a,r)=>a+r.cost,0);
+    return `<div class="sb"><span>${t.name}</span><span class="track"><span class="fill" style="width:${v/scale*100}%;background:${t.color}"></span></span><span class="amt">${k(v)}</span></div>`}).join('')+
+    `<div class="sb"><span class="up" style="font-weight:600">Unallocated</span><span class="track"><span class="fill" style="width:${un/scale*100}%;background:var(--magenta)"></span></span><span class="amt up">${k(un)}</span></div>`;
+  $('#sb-note').textContent=open?'Unallocated spend can’t be charged back, so no team feels it. Apply tags to watch it move.'
+    :'The remaining $37.0k is shared cost (Support, shared networking, discount credits). A proportional split rule allocates it by each team’s direct spend.';
+}
+$('#tbody').addEventListener('click',e=>{const b=e.target.closest('[data-row]'); if(!b)return; rows[+b.dataset.row].applied=true; renderTagging()});
+$('#apply-all').addEventListener('click',()=>{rows.forEach(r=>r.applied=true); renderTagging()});
+
+/* ---------- shared: highlighter ---------- */
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function hlRego(src){
+  const re=/(#[^\n]*)|("(?:[^"\\]|\\.)*"|`[^`]*`)|\b(package|import|if|contains|some|in|not|every|with|as|default)\b|\b(deny|warn|test_[a-z_]+)\b|\b(sprintf|count|object\.get|object\.keys|split|regex\.match|to_number|round)\b/g;
+  let out='',last=0,m;
+  while((m=re.exec(src))){out+=esc(src.slice(last,m.index));
+    const c=m[1]?'c':m[2]?'s':m[3]?'k':m[4]?'fn':'fn';
+    out+=`<span class="${c}">${esc(m[0])}</span>`; last=re.lastIndex}
+  return out+esc(src.slice(last));
+}
+function hlYaml(src){
+  const frag=t=>{let o='',last=0,m;const re=/(\$\{\{[^}]*\}\})|("[^"]*")/g;
+    while((m=re.exec(t))){o+=esc(t.slice(last,m.index))+`<span class="${m[1]?'k':'s'}">${esc(m[0])}</span>`;last=re.lastIndex}
+    return o+esc(t.slice(last));};
+  return src.split('\n').map(l=>{
+    const c=l.indexOf('#'); let body=l,com='';
+    if(c>-1 && !/["']/.test(l.slice(0,c)) && (c===0||l[c-1]===' ')){body=l.slice(0,c);com=l.slice(c)}
+    const m=body.match(/^(\s*-?\s*)([A-Za-z_][\w.-]*)(:)(.*)$/);
+    const h=m?esc(m[1])+'<span class="y-k">'+esc(m[2])+'</span>:'+frag(m[4]):frag(body);
+    return h+(com?`<span class="c">${esc(com)}</span>`:'');
+  }).join('\n');
+}
+
+/* ---------- policy library ---------- */
+const POLICIES=[
+{id:'tags',t:'Required tags',file:'policy/terraform/tags.rego',sev:'deny',
+why:'Every new resource must carry the four tags Finance uses for chargeback. This is the rule that keeps tag coverage at 90%+ after the cleanup.',
+code:`package terraform.tags
+
+import rego.v1
+
+required := {"CostCenter", "Owner", "Environment", "Application"}
+
+# tags_all merges resource tags with provider default_tags
+deny contains msg if {
+	some rc in input.resource_changes
+	"create" in rc.change.actions
+	"tags" in object.keys(rc.change.after) # skip untaggable types
+	tags := object.get(rc.change.after, "tags_all", {})
+	missing := required - {k | some k, _ in tags}
+	count(missing) > 0
+	msg := sprintf("%s is missing required tags: %v", [rc.address, missing])
+}`,
+out:`<span class="fail">FAIL</span> - plan.json - terraform.tags - aws_s3_bucket.statement_archive is missing required tags: {"CostCenter", "Owner"}
+<span class="fail">FAIL</span> - plan.json - terraform.tags - aws_db_instance.risk_reports is missing required tags: {"Application"}`},
+{id:'values',t:'Allowed tag values',file:'policy/terraform/tag_values.rego',sev:'deny',
+why:'A tag that exists but holds "test123" is as useless as no tag. Values are checked against the list Finance maintains.',
+code:`package terraform.tag_values
+
+import rego.v1
+
+allowed_env := {"prod", "staging", "dev", "loadtest"}
+
+deny contains msg if {
+	some rc in input.resource_changes
+	"create" in rc.change.actions
+	env := rc.change.after.tags_all.Environment
+	not env in allowed_env
+	msg := sprintf("%s has Environment=%q; allowed: %v", [rc.address, env, allowed_env])
+}
+
+deny contains msg if {
+	some rc in input.resource_changes
+	"create" in rc.change.actions
+	cc := rc.change.after.tags_all.CostCenter
+	not regex.match(\`^CC-[0-9]{4}$\`, cc)
+	msg := sprintf("%s has CostCenter=%q; expected format CC-1234", [rc.address, cc])
+}`,
+out:`<span class="fail">FAIL</span> - plan.json - terraform.tag_values - aws_instance.etl_worker has Environment="testing"; allowed: {"dev", "loadtest", "prod", "staging"}
+<span class="fail">FAIL</span> - plan.json - terraform.tag_values - aws_instance.etl_worker has CostCenter="data"; expected format CC-1234`},
+{id:'size',t:'Instance size limits',file:'policy/terraform/instance_size.rego',sev:'deny',
+why:'Oversized non-prod boxes are the most common source of waste. Anything above 2xlarge outside prod needs an approved exception tag.',
+code:`package terraform.instance_size
+
+import rego.v1
+
+# Non-prod stays at 2xlarge or smaller unless an exception is approved
+non_prod_sizes := {"nano", "micro", "small", "medium", "large", "xlarge", "2xlarge"}
+
+deny contains msg if {
+	some rc in input.resource_changes
+	rc.type == "aws_instance"
+	"create" in rc.change.actions
+	tags := rc.change.after.tags_all
+	tags.Environment != "prod"
+	not tags.SizeException
+	itype := rc.change.after.instance_type
+	size := split(itype, ".")[1]
+	not size in non_prod_sizes
+	msg := sprintf("%s uses %s in %s; non-prod max is 2xlarge (or add a SizeException tag)", [rc.address, itype, tags.Environment])
+}`,
+out:`<span class="fail">FAIL</span> - plan.json - terraform.instance_size - aws_instance.loadtest_rig uses c7i.8xlarge in loadtest; non-prod max is 2xlarge (or add a SizeException tag)`},
+{id:'storage',t:'Storage hygiene',file:'policy/terraform/storage.rego',sev:'warn',
+why:'Warnings nudge without blocking: gp2 volumes cost more than gp3, and buckets without lifecycle rules keep every object in Standard forever.',
+code:`package terraform.storage
+
+import rego.v1
+
+warn contains msg if {
+	some rc in input.resource_changes
+	rc.type == "aws_ebs_volume"
+	rc.change.after.type == "gp2"
+	msg := sprintf("%s uses gp2; gp3 is ~20%% cheaper per GB", [rc.address])
+}
+
+warn contains msg if {
+	some rc in input.resource_changes
+	rc.type == "aws_s3_bucket"
+	"create" in rc.change.actions
+	not has_lifecycle(rc.address)
+	msg := sprintf("%s has no lifecycle rules; add tiering or expiration", [rc.address])
+}
+
+has_lifecycle(addr) if {
+	some r in input.configuration.root_module.resources
+	r.type == "aws_s3_bucket_lifecycle_configuration"
+	addr in r.expressions.bucket.references
+}`,
+out:`<span class="warnl">WARN</span> - plan.json - terraform.storage - aws_ebs_volume.loadtest_data uses gp2; gp3 is ~20% cheaper per GB
+<span class="warnl">WARN</span> - plan.json - terraform.storage - aws_s3_bucket.statement_archive has no lifecycle rules; add tiering or expiration`},
+{id:'cost',t:'Cost guardrail',file:'policy/infracost/cost.rego',sev:'warn',
+why:'This one reads Infracost output instead of the plan. Big increases need a FinOps reviewer, and very expensive single resources are blocked until an architecture review.',
+code:`package infracost
+
+import rego.v1
+
+review_threshold := 1000 # USD per month
+
+warn contains msg if {
+	diff := to_number(input.diffTotalMonthlyCost)
+	diff > review_threshold
+	msg := sprintf("PR adds $%v/month (threshold $%v); FinOps review required", [round(diff), review_threshold])
+}
+
+deny contains msg if {
+	some project in input.projects
+	some r in project.breakdown.resources
+	to_number(r.monthlyCost) > 5000
+	msg := sprintf("%s costs $%v/month; over $5,000 needs architecture review", [r.name, round(to_number(r.monthlyCost))])
+}`,
+out:`<span class="warnl">WARN</span> - infracost.json - infracost - PR adds $1387/month (threshold $1000); FinOps review required`},
+{id:'test',t:'Unit tests for policies',file:'policy/terraform/tags_test.rego',sev:'test',
+why:'Policies are code, so they get tests. opa test runs in CI before the policies are trusted to gate anything.',
+code:`package terraform.tags_test
+
+import rego.v1
+import data.terraform.tags
+
+test_missing_tags_denied if {
+	result := tags.deny with input as {"resource_changes": [{
+		"address": "aws_s3_bucket.b",
+		"change": {"actions": ["create"], "after": {
+			"tags": {}, "tags_all": {"Owner": "data-eng"},
+		}},
+	}]}
+	count(result) == 1
+}
+
+test_fully_tagged_allowed if {
+	result := tags.deny with input as {"resource_changes": [{
+		"address": "aws_s3_bucket.b",
+		"change": {"actions": ["create"], "after": {"tags": {}, "tags_all": {
+			"CostCenter": "CC-2210", "Owner": "data-eng",
+			"Environment": "prod", "Application": "exports",
+		}}},
+	}]}
+	count(result) == 0
+}`,
+out:`<span class="dim">$ opa test policy/ -v</span>
+policy/terraform/tags_test.rego:
+data.terraform.tags_test.test_missing_tags_denied: <span class="pass">PASS</span> (1.2ms)
+data.terraform.tags_test.test_fully_tagged_allowed: <span class="pass">PASS</span> (0.9ms)
+--------------------------------------------------------------------------------
+<span class="pass">PASS: 2/2</span>`}
+,
+{id:'c7n-tags',t:'Untagged resources: notify, then stop',file:'custodian/tag-compliance.yml',sev:'custodian',lang:'yaml',
+why:'OPA only sees Terraform. This catches untagged instances created any other way, tells the owner, and stops them after three days if nobody fixes the tags.',
+code:`policies:
+  - name: ec2-untagged-mark-for-stop
+    resource: aws.ec2
+    mode:
+      type: periodic
+      schedule: "rate(1 day)"
+      role: arn:aws:iam::{account_id}:role/custodian-lambda
+    filters:
+      - "tag:c7n_tag_compliance": absent
+      - or:
+          - "tag:CostCenter": absent
+          - "tag:Owner": absent
+          - "tag:Environment": absent
+          - "tag:Application": absent
+    actions:
+      - type: mark-for-op
+        tag: c7n_tag_compliance
+        op: stop
+        days: 3
+      - type: notify
+        to: [resource-owner, finops-team@example.com]
+        subject: "Untagged EC2 will be stopped in 3 days"
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/111122223333/c7n-mailer
+
+  - name: ec2-untagged-stop
+    resource: aws.ec2
+    filters:
+      - type: marked-for-op
+        tag: c7n_tag_compliance
+        op: stop
+    actions:
+      - stop
+
+  # Tag every new instance with the IAM identity that launched it
+  - name: ec2-auto-tag-creator
+    resource: aws.ec2
+    mode:
+      type: cloudtrail
+      events: [RunInstances]
+      role: arn:aws:iam::{account_id}:role/custodian-lambda
+    actions:
+      - type: auto-tag-user
+        tag: CreatedBy`,
+out:`<span class="dim">$ c7n-org run -c accounts.yml -s out -u custodian/tag-compliance.yml</span>
+<span class="cyl">policy:ec2-untagged-mark-for-stop</span> account:prod-shared region:us-east-1 count:<b>38</b>
+  <span class="warnl">mark-for-op</span> tagged 38 instances: stop on 2026/10/23
+  <span class="dim">notify</span> 38 messages queued to c7n-mailer (owners + finops-team)
+<span class="cyl">policy:ec2-untagged-mark-for-stop</span> account:dev-sandbox region:us-east-1 count:<b>11</b>
+  <span class="warnl">mark-for-op</span> tagged 11 instances: stop on 2026/10/23
+<span class="cyl">policy:ec2-untagged-stop</span> 14 accounts count:<b>0</b>  <span class="dim">(nothing past its 3-day grace period yet)</span>`},
+{id:'c7n-hours',t:'Off-hours schedule for non-prod',file:'custodian/offhours.yml',sev:'custodian',lang:'yaml',
+why:'This is the runtime side of the scheduling recommendation in step 05. Dev, test and UAT stop at 7pm and start at 7am on weekdays, Eastern time. Teams can opt a resource out with a tag.',
+code:`policies:
+  - name: nonprod-ec2-offhours-stop
+    resource: aws.ec2
+    mode:
+      type: periodic
+      schedule: "rate(1 hour)"
+      role: arn:aws:iam::{account_id}:role/custodian-lambda
+    filters:
+      - type: value
+        key: "tag:Environment"
+        op: in
+        value: [dev, test, uat]
+      - type: offhour
+        default_tz: et
+        offhour: 19
+        opt-out: true      # applies unless a resource opts out by tag
+    actions:
+      - stop
+
+  - name: nonprod-ec2-onhours-start
+    resource: aws.ec2
+    mode:
+      type: periodic
+      schedule: "rate(1 hour)"
+      role: arn:aws:iam::{account_id}:role/custodian-lambda
+    filters:
+      - type: value
+        key: "tag:Environment"
+        op: in
+        value: [dev, test, uat]
+      - type: onhour
+        default_tz: et
+        onhour: 7
+        opt-out: true
+    actions:
+      - start
+
+  - name: nonprod-rds-offhours-stop
+    resource: aws.rds
+    mode:
+      type: periodic
+      schedule: "rate(1 hour)"
+      role: arn:aws:iam::{account_id}:role/custodian-lambda
+    filters:
+      - type: value
+        key: "tag:Environment"
+        op: in
+        value: [dev, test, uat]
+      - type: offhour
+        default_tz: et
+        offhour: 19
+        opt-out: true
+    actions:
+      - stop`,
+out:`<span class="dim">Lambda run · Tue 2026-10-20 19:00 ET</span>
+<span class="cyl">policy:nonprod-ec2-offhours-stop</span> 6 accounts count:<b>212</b>  <span class="warnl">stop</span> 212 instances
+<span class="cyl">policy:nonprod-rds-offhours-stop</span> 6 accounts count:<b>27</b>  <span class="warnl">stop</span> 27 DB instances
+<span class="dim">Lambda run · Wed 2026-10-21 07:00 ET</span>
+<span class="cyl">policy:nonprod-ec2-onhours-start</span> 6 accounts count:<b>212</b>  <span class="pass">start</span> 212 instances
+<span class="pass">Non-prod runs 60 of 168 hours a week: about $11.2k/month saved (step 05)</span>`},
+{id:'c7n-waste',t:'Waste cleanup: volumes and snapshots',file:'custodian/waste-cleanup.yml',sev:'custodian',lang:'yaml',
+why:'Unattached volumes and old snapshots pile up quietly. Anything under a records-retention hold is skipped, which matters at a bank. Volumes are snapshotted before deletion.',
+code:`policies:
+  - name: ebs-unattached-30d
+    resource: aws.ebs
+    filters:
+      - Attachments: []
+      - type: value
+        key: CreateTime
+        value_type: age
+        op: greater-than
+        value: 30
+      - "tag:RetentionHold": absent
+    actions:
+      - type: snapshot
+      - delete
+
+  - name: ebs-snapshots-older-than-180d
+    resource: aws.ebs-snapshot
+    filters:
+      - type: age
+        days: 180
+        op: ge
+      - type: unused          # not referenced by an AMI or launch template
+      - "tag:RetentionHold": absent
+    actions:
+      - delete
+
+  - name: gp2-volumes-report
+    resource: aws.ebs
+    filters:
+      - VolumeType: gp2
+    actions:
+      - type: notify
+        to: [resource-owner]
+        subject: "gp2 volume: migrate to gp3 (about 20% cheaper)"
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/111122223333/c7n-mailer`,
+out:`<span class="dim">$ c7n-org run -c accounts.yml -s out -u custodian/waste-cleanup.yml --dryrun</span>
+<span class="cyl">policy:ebs-unattached-30d</span> 14 accounts count:<b>188</b>  <span class="dim">(dry run: snapshot + delete)</span>
+<span class="cyl">policy:ebs-snapshots-older-than-180d</span> 14 accounts count:<b>4,100</b>  <span class="dim">(dry run: delete)</span>
+  <span class="warnl">skipped</span> 312 snapshots with RetentionHold tag
+<span class="cyl">policy:gp2-volumes-report</span> 14 accounts count:<b>612</b>  <span class="dim">(owners notified)</span>
+<span class="pass">Estimated savings: $4.3k/month cleanup + $3.9k/month gp3 (step 05)</span>`}
+
+];
+function initPolicies(){
+  const list=$('#plist');
+  list.innerHTML=POLICIES.map((p,i)=>(i===0?'<div class="grp">OPA · before deploy</div>':p.sev==='custodian'&&POLICIES[i-1].sev!=='custodian'?'<div class="grp">Cloud Custodian · after deploy</div>':'')+`<button class="pitem" role="tab" aria-selected="${i===0}" data-p="${p.id}"><span class="pt">${p.t}</span><span class="pk">${p.file.split('/').pop()}</span><span class="sev ${p.sev}">${p.sev==='test'?'opa test':p.sev==='custodian'?'Cloud Custodian':p.sev}</span></button>`).join('');
+  const sel=id=>{const p=POLICIES.find(x=>x.id===id);
+    list.querySelectorAll('.pitem').forEach(b=>b.setAttribute('aria-selected',b.dataset.p===id));
+    $('#pv-title').textContent=p.t; $('#pv-sev').innerHTML=`<span class="sev ${p.sev}">${p.sev==='deny'?'deny · blocks merge':p.sev==='warn'?'warn · comment only':p.sev==='custodian'?'Cloud Custodian · acts on live resources':'opa test'}</span>`;
+    $('#pv-why').textContent=p.why; $('#pv-file').textContent=p.file;
+    $('#pv-code').innerHTML=(p.lang==='yaml'?hlYaml:hlRego)(p.code); $('#pv-out').innerHTML=p.out;};
+  list.addEventListener('click',e=>{const b=e.target.closest('[data-p]'); if(b) sel(b.dataset.p)});
+  sel('tags');
+}
+
+/* ---------- pipeline ---------- */
+const HR=730, PRICE={'c7i.8xlarge':1.428,'c7i.2xlarge':0.357,'m7g.xlarge':0.1632,'db.r6g.large':0.225};
+const pr={tags:false,size:false};
+function planRes(){
+  const lt=pr.size?'c7i.2xlarge':'c7i.8xlarge', vt=pr.size?'gp3':'gp2';
+  const full=(cc,o,e,a)=>({CostCenter:cc,Owner:o,Environment:e,Application:a});
+  return [
+    {addr:'aws_instance.rewards_api',d:'m7g.xlarge',tags:full('CC-3105','rewards-team','prod','rewards-api'),cost:PRICE['m7g.xlarge']*HR},
+    {addr:'aws_s3_bucket.statement_archive',d:'S3 bucket',tags:pr.tags?full('CC-2210','servicing-team','prod','statements'):{Environment:'prod',Application:'statements'},cost:0},
+    {addr:'aws_db_instance.risk_reports',d:'db.r6g.large · 100 GB gp3',tags:pr.tags?full('CC-4410','risk-analytics','prod','risk-reports'):{CostCenter:'CC-4410',Owner:'risk-analytics',Environment:'prod'},cost:PRICE['db.r6g.large']*HR+11.5},
+    {addr:'aws_instance.loadtest_rig',d:lt,tags:full('CC-1042','platform-team','loadtest','auth-loadtest'),cost:PRICE[lt]*HR,flag:!pr.size},
+    {addr:'aws_ebs_volume.loadtest_data',d:'500 GB '+vt,tags:full('CC-1042','platform-team','loadtest','auth-loadtest'),cost:500*(pr.size?0.08:0.10),flag:!pr.size}
+  ];
+}
+const total=()=>planRes().reduce((a,r)=>a+r.cost,0);
+const ORIG=1387.3;
+const usd=v=>'$'+Math.round(v).toLocaleString('en-US');
+function renderPlan(){
+  $('#plan').innerHTML=planRes().map(p=>`<div class="res"><div class="row" style="justify-content:space-between"><span class="addr">+ ${p.addr}</span><span class="mono" style="font-size:12px;color:${p.flag?'var(--magenta)':'var(--fg2)'}">${p.d} · ${usd(p.cost)}/mo</span></div><div>${['CostCenter','Owner','Environment','Application'].map(t=>p.tags[t]?`<span class="chip ok">${t}=${p.tags[t]}</span>`:`<span class="chip miss">${t} missing</span>`).join('')}</div></div>`).join('');
+  const t=total();
+  $('#cost-now').textContent='+'+usd(t)+'/mo'; $('#cost-now').className='cv num '+(t>1000?'warn':'good');
+  $('#cost-now-note').textContent=t>1000?'Over $1,000: FinOps review requested':'Under $1,000 threshold: no review needed';
+  const sv=ORIG-t; $('#cost-saved').textContent=usd(sv)+'/mo';
+  $('#cost-saved-yr').textContent=sv>1?usd(sv*12)+' a year, before any of it was deployed':'Apply the right-size fix';
+  $('#fix-tags').disabled=pr.tags; $('#fix-size').disabled=pr.size;
+}
+const STAGES=[
+  ['co','Checkout','actions/checkout'],
+  ['val','Format & validate','terraform fmt · validate'],
+  ['opatest','Policy unit tests','opa test'],
+  ['plan','Terraform plan','plan.json'],
+  ['pol','Policy check','conftest · OPA'],
+  ['cost','Cost check','Infracost + OPA'],
+  ['gate','Review gate','required approvals'],
+  ['apply','Apply','on merge to main']
+];
+const ICON={pass:'✓',fail:'✕',warn:'!',run:'•••',ready:'⏸',skip:'–'};
+function setStage(id,state,sub){
+  const el=document.querySelector(`[data-stage="${id}"]`); el.className='stage '+(state||'');
+  el.querySelector('.dot').textContent=ICON[state]||STAGES.findIndex(s=>s[0]===id)+1;
+  const ss=el.querySelector('.ss'); ss.textContent=sub||''; ss.style.color=state==='fail'?'var(--magenta)':state==='warn'?'var(--amber)':state==='pass'?'var(--lime)':state==='ready'?'var(--violet)':'var(--fg2)';
+}
+function drawPipe(){
+  $('#pipe').innerHTML=STAGES.map((s,i)=>`<div class="stage" data-stage="${s[0]}"><span class="dot">${i+1}</span><span class="sn">${s[1]}</span><span class="st">${s[2]}</span><span class="ss"></span></div>`).join('');
+}
+let busy=false;
+function runPipe(){
+  if(busy)return; busy=true; drawPipe(); $('#run-pipe').disabled=true;
+  const term=$('#term'); term.innerHTML='';
+  const log=h=>{term.innerHTML+=h+'\n'; term.scrollTop=term.scrollHeight};
+  const tagFail=!pr.tags, sizeFail=!pr.size, t=total(), costWarn=t>1000;
+  const fails=[], warns=[];
+  if(tagFail){fails.push('aws_s3_bucket.statement_archive is missing required tags: {"CostCenter", "Owner"}');fails.push('aws_db_instance.risk_reports is missing required tags: {"Application"}')}
+  if(sizeFail){fails.push('aws_instance.loadtest_rig uses c7i.8xlarge in loadtest; non-prod max is 2xlarge (or add a SizeException tag)');warns.push('aws_ebs_volume.loadtest_data uses gp2; gp3 is ~20% cheaper per GB')}
+  warns.push('aws_s3_bucket.statement_archive has no lifecycle rules; add tiering or expiration');
+  const pkg=m=>m.includes('missing required')?'terraform.tags':m.includes('non-prod')?'terraform.instance_size':'terraform.storage';
+  const steps=[
+    ()=>{setStage('co','run');log('<span class="cyl">▶ Checkout</span>  feature/statement-archive @ 7c1e9ab')},
+    ()=>{setStage('co','pass','2s');setStage('val','run');log('<span class="cyl">▶ terraform fmt -check && terraform validate</span>')},
+    ()=>{log('<span class="pass">Success!</span> The configuration is valid.');setStage('val','pass','9s');setStage('opatest','run');log('<span class="cyl">▶ opa test policy/ -v</span>')},
+    ()=>{log('<span class="pass">PASS: 14/14</span>  (6 policy files)');setStage('opatest','pass','14/14');setStage('plan','run');log('<span class="cyl">▶ terraform plan -out=tfplan && terraform show -json tfplan > plan.json</span>')},
+    ()=>{log('Plan: <b>5 to add</b>, 0 to change, 0 to destroy.');setStage('plan','pass','5 to add');setStage('pol','run');log('<span class="cyl">▶ conftest test plan.json --policy policy/terraform --all-namespaces</span>')},
+    ()=>{fails.forEach(m=>log(`<span class="fail">FAIL</span> - plan.json - ${pkg(m)} - ${m}`));warns.forEach(m=>log(`<span class="warnl">WARN</span> - plan.json - ${pkg(m)} - ${m}`));
+        log(`<span class="dim">18 tests, ${18-fails.length-warns.length} passed, ${warns.length} warning${warns.length>1?'s':''}, ${fails.length} failure${fails.length===1?'':'s'}, 0 exceptions</span>`);
+        setStage('pol',fails.length?'fail':'warn',fails.length?fails.length+' denied':warns.length+' warning'+(warns.length>1?'s':''));
+        setStage('cost','run');log('<span class="cyl">▶ infracost breakdown --path plan.json --format json --out-file infracost.json</span>')},
+    ()=>{log(`Monthly cost change: <b class="${costWarn?'warnl':'pass'}">+${usd(t)}</b>  (${planRes().map(r=>r.addr.split('.')[1]+' '+usd(r.cost)).join(', ')})`);
+        log('<span class="cyl">▶ conftest test infracost.json --policy policy/infracost --namespace infracost</span>');
+        if(costWarn) log(`<span class="warnl">WARN</span> - infracost.json - infracost - PR adds $${Math.round(t)}/month (threshold $1000); FinOps review required`);
+        else log('<span class="pass">2 tests, 2 passed</span>, 0 warnings, 0 failures');
+        log('<span class="dim">▶ infracost comment github --behavior update   (cost table posted to PR)</span>');
+        setStage('cost',costWarn?'warn':'pass',(costWarn?'+':'+')+usd(t)+'/mo')},
+    ()=>{if(fails.length){setStage('gate','skip','blocked');setStage('apply','skip','blocked');
+          log(`\n<span class="fail">✕ Required check "policy-check" failed. Merge blocked.</span>`);
+          $('#pipe-state').innerHTML='<span class="up">Merge blocked · '+fails.length+' policy violation'+(fails.length>1?'s':'')+'</span>'}
+        else{ if(costWarn){setStage('gate','ready','FinOps approval');log('\n<span class="warnl">! Policies passed. Cost over threshold: label "finops-review" added, @finops-team requested.</span>');$('#pipe-state').innerHTML='<span class="warn">Waiting on FinOps approval</span>'}
+          else{setStage('gate','pass','code owner only');log('\n<span class="pass">✓ All required checks passed. Ready to merge.</span>');$('#pipe-state').innerHTML='<span class="good">All checks passed · ready to merge</span>'}
+          setStage('apply','ready','after merge');log('<span class="dim">terraform apply runs on merge to main with the reviewed plan.</span>')}
+        busy=false;$('#run-pipe').disabled=false;$('#run-pipe').textContent='Re-run pipeline'}
+  ];
+  let i=0;(function next(){if(i<steps.length){steps[i++]();setTimeout(next,i===6?900:650)}})();
+}
+const YAML=`name: terraform-guardrails
+on:
+  pull_request:
+    paths: ["infra/**", "policy/**"]
+
+permissions:
+  contents: read
+  id-token: write        # OIDC to AWS, no stored keys
+  pull-requests: write   # cost comment on the PR
+
+jobs:
+  plan-and-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/card-platform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::111122223333:role/gha-terraform-plan
+          aws-region: us-east-1
+
+      - uses: hashicorp/setup-terraform@v3
+      - uses: open-policy-agent/setup-opa@v2
+      - uses: infracost/actions/setup@v3
+        with:
+          api-key: \${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Format and validate
+        run: |
+          terraform fmt -check -recursive
+          terraform init -input=false
+          terraform validate
+
+      - name: Policy unit tests
+        run: opa test \${{ github.workspace }}/policy -v
+
+      - name: Terraform plan
+        run: |
+          terraform plan -input=false -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: Policy check (OPA via conftest)
+        run: |
+          docker run --rm -v "$PWD:/project" \\
+            -v "\${{ github.workspace }}/policy:/policy" \\
+            openpolicyagent/conftest test plan.json \\
+            --policy /policy/terraform --all-namespaces
+
+      - name: Cost check (Infracost + OPA)
+        if: always()   # report cost even when policies fail
+        run: |
+          infracost breakdown --path plan.json \\
+            --format json --out-file infracost.json
+          docker run --rm -v "$PWD:/project" \\
+            -v "\${{ github.workspace }}/policy:/policy" \\
+            openpolicyagent/conftest test infracost.json \\
+            --policy /policy/infracost --namespace infracost
+          infracost comment github --path infracost.json \\
+            --repo \${{ github.repository }} \\
+            --pull-request \${{ github.event.pull_request.number }} \\
+            --github-token \${{ github.token }} --behavior update
+
+# Branch protection on main requires "plan-and-check" to pass.
+# A separate workflow on push to main runs terraform apply
+# in a protected "production" environment.`;
+function initPipeline(){
+  drawPipe(); renderPlan(); $('#yaml').innerHTML=hlYaml(YAML);
+  $('#run-pipe').addEventListener('click',runPipe);
+  $('#fix-tags').addEventListener('click',()=>{pr.tags=true;renderPlan();$('#pipe-state').textContent='New commit pushed · re-run to check'});
+  $('#fix-size').addEventListener('click',()=>{pr.size=true;renderPlan();$('#pipe-state').textContent='New commit pushed · re-run to check'});
+  $('#reset-pipe').addEventListener('click',()=>{if(busy)return;pr.tags=false;pr.size=false;drawPipe();renderPlan();$('#term').innerHTML='<span class="dim">Press "Run pipeline" to start.</span>';$('#pipe-state').textContent='Not run yet';$('#run-pipe').textContent='Run pipeline'});
+}
+
+/* ---------- optimize ---------- */
+function renderRecs(){
+  $('#recs').innerHTML=recs.filter(r=>filter==='All'||r.cat===filter).map(r=>`<button class="rec" role="checkbox" aria-checked="${r.on}" data-rec="${r.id}">
+    <span class="box"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="#041016" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span><span class="tt">${r.t}</span><span class="dd" style="display:block">${r.d}</span>
+      <span style="display:block;margin-top:6px"><span class="chip cat">${r.cat}</span><span class="chip eff">${r.e}</span><span class="chip risk">${r.risk}</span></span></span>
+    <span class="sv">${k(r.s)}<small>per month</small></span></button>`).join('');
+}
+function renderTotals(){
+  const sel=recs.filter(r=>r.on), mo=sel.reduce((a,r)=>a+r.s,0);
+  $('#o-mo').textContent=k(mo); $('#o-count').textContent=sel.length+' action'+(sel.length===1?'':'s')+' selected';
+  $('#o-yr').textContent='$'+(mo*12/1000).toFixed(2)+'M';
+  $('#o-rate').textContent=k(BASE-mo); $('#o-pct').textContent=(mo/BASE*100).toFixed(1)+'% reduction';
+  $('#o-unit').textContent='$'+((BASE-mo)*1000/TXN).toFixed(2);
+  $('#k-save').textContent=k(mo); $('#k-save-f').textContent='per month · '+sel.length+' actions in step 05';
+  const on=id=>recs.find(r=>r.id===id).on;
+  let msg='';
+  if(on('sp')&&!(on('rs')&&on('sch'))) msg='The Savings Plan is selected without '+(!on('rs')&&!on('sch')?'right-sizing and scheduling':!on('rs')?'right-sizing':'scheduling')+'. Commit after those land, or you lock in spend on capacity you’re about to remove.';
+  else if(on('grav')&&on('sp')) msg='Graviton plus a Compute Savings Plan works well, since the plan covers any instance family. Avoid EC2 Instance Savings Plans locked to m6i.';
+  $('#seq-warn').hidden=!msg; $('#seq-text').textContent=msg;
+  $('#seq-warn').querySelector('b').textContent=on('sp')&&!(on('rs')&&on('sch'))?'Sequencing check:':'Architecture note:';
+  $('#seq-warn').style.borderColor=on('sp')&&!(on('rs')&&on('sch'))?'':'color-mix(in srgb,var(--cyan) 50%,var(--line))';
+  $('#seq-warn').querySelector('b').style.color=on('sp')&&!(on('rs')&&on('sch'))?'':'var(--cyan)';
+  proj(sel);
+}
+function proj(sel){
+  const W=460,H=260,L=50,R=14,T=14,B=34,min=250,max=500,n=12;
+  const months=['Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
+  const x=i=>L+i*(W-L-R)/(n-1), y=v=>T+(max-v)*(H-T-B)/(max-min);
+  const base=[],opt=[]; let cum=0;
+  for(let t=0;t<n;t++){const b=BASE*Math.pow(1.015,t+1); const sv=sel.reduce((a,r)=>{const rr=ramp[r.cat];return a+r.s*(rr[Math.min(t,rr.length-1)])},0)*(b/BASE); base.push(b); opt.push(b-sv); cum+=sv}
+  let s='';
+  [250,300,350,400,450,500].forEach(v=>{s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">$${v}k</text>`});
+  months.forEach((m,i)=>{if(i%2===0) s+=`<text x="${x(i)}" y="${H-12}" text-anchor="middle">${m}</text>`});
+  const pb=base.map((v,i)=>`${x(i)},${y(v)}`).join(' '), po=opt.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  s+=`<polygon points="${pb} ${opt.map((v,i)=>`${x(i)},${y(v)}`).reverse().join(' ')}" fill="var(--lime)" fill-opacity=".12"/>`;
+  s+=`<polyline points="${pb}" fill="none" stroke="var(--magenta)" stroke-width="2" stroke-dasharray="6 4"/>`;
+  s+=`<polyline points="${po}" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  s+=`<circle cx="${x(n-1)}" cy="${y(base[n-1])}" r="4" fill="var(--magenta)"/><circle cx="${x(n-1)}" cy="${y(opt[n-1])}" r="4" fill="var(--lime)"/>`;
+  s+=`<text x="${x(n-1)-8}" y="${y(base[n-1])-9}" text-anchor="end" style="fill:var(--magenta)">${k(base[n-1])}</text>`;
+  s+=`<text x="${x(n-1)-8}" y="${y(opt[n-1])+17}" text-anchor="end" style="fill:var(--lime)">${k(opt[n-1])}</text>`;
+  $('#proj').innerHTML=s;
+  $('#cum').innerHTML=`First-year savings with ramp-up: <b class="good mono">$${(cum/1000).toFixed(2)}M</b>`;
+}
+$('#recs').addEventListener('click',e=>{const b=e.target.closest('[data-rec]'); if(!b)return; const r=recs.find(x=>x.id===b.dataset.rec); r.on=!r.on; b.setAttribute('aria-checked',r.on); renderTotals()});
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]'); if(!b)return; filter=b.dataset.f; document.querySelectorAll('.fbtn').forEach(f=>f.setAttribute('aria-pressed',f===b?'true':'false')); renderRecs()});
+
+renderTagging(); renderRecs(); renderTotals(); initPolicies(); initPipeline();
+})();
+</script>
+
+</body>
+</html>
