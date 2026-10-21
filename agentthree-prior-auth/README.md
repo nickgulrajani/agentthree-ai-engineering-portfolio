@@ -7,6 +7,8 @@ One end-to-end prior authorization scenario (**CPT 72148 · MRI lumbar spine**) 
 
 > Fictional patients, payer, and policy — **not for clinical use**.
 
+**How to run:** [How_to_Run_Demo.md](./How_to_Run_Demo.md)
+
 ---
 
 ## Status
@@ -89,7 +91,7 @@ scripts/run_demo.sh
 
 ## Quick start (free tier)
 
-No Workspace Gemini license required. Use a [Google AI Studio](https://aistudio.google.com/apikey) free API key.
+Step-by-step: **[How_to_Run_Demo.md](./How_to_Run_Demo.md)**. Default is `DEMO_MODE=true` ($0 fixtures). No Workspace Gemini license required. Optional live model: [Google AI Studio](https://aistudio.google.com/apikey) free API key.
 
 ```bash
 python3 -m venv .venv
