@@ -2,7 +2,7 @@
 
 [![Portfolio Verify](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml/badge.svg)](https://github.com/nickgulrajani/agentthree-ai-engineering-portfolio/actions/workflows/verify.yml)
 
-Monorepo portfolio of Agent Three AI engineering projects: agentic systems, enterprise RAG, agent evaluation, confidential AI, DevSecOps, multi-cloud zero trust, and AWS FinOps.
+Monorepo portfolio of Agent Three AI engineering projects: agentic systems, enterprise RAG, agent evaluation, confidential AI, DevSecOps, multi-cloud zero trust, AWS FinOps, and a hands-on AI architecture lab.
 
 Website: [agentthree.ai](https://agentthree.ai/)
 
@@ -33,8 +33,9 @@ Lab: [agentthree.ai/solutions/agentic-ai](https://agentthree.ai/solutions/agenti
 | AI DevSecOps & Governance | [`agentthree-ai-devsecops/`](./agentthree-ai-devsecops) | [OPA Anomaly Lab](https://agentthree.ai/solutions/opa-anomaly-detection) | 14 |
 | Agent Evaluation | [`agentthree-agent-eval/`](./agentthree-agent-eval) | [Agent Evaluation](https://agentthree.ai/ai-engineering-lab/agent-evaluation) | 7 |
 | AWS FinOps Lab | [`agentthree-aws-finops/`](./agentthree-aws-finops) | [AWS FinOps Lab](https://agentthree.ai/ai-engineering-lab/aws-finops-lab) | 8 |
+| Hands-On AI Architecture Lab | [`agentthree-ai-architect-lab/`](./agentthree-ai-architect-lab) | [Hands-On AI Architecture Lab](https://agentthree.ai/ai-engineering-lab/ai-architect-hands-on) | 9 |
 
-Test counts: pytest (and for Zero Trust / FinOps, Rego when OPA is installed; Zero Trust also runs Terraform mock-provider). Agent Evaluation also runs a published A/B gate via `python -m evaluation.run_eval`. FinOps is fixture CUR + policy gates — no AWS account.
+Test counts: pytest (and for Zero Trust / FinOps, Rego when OPA is installed; Zero Trust also runs Terraform mock-provider). Agent Evaluation also runs a published A/B gate via `python -m evaluation.run_eval`. FinOps is fixture CUR + policy gates — no AWS account. The architecture lab is a simulated lending assistant — no cloud APIs.
 
 ## Verify everything
 
@@ -77,11 +78,13 @@ The same projects also exist as individual GitHub repositories for focused cloni
 | AI DevSecOps & Governance | [agentthree-ai-devsecops](https://github.com/nickgulrajani/agentthree-ai-devsecops) |
 | Agent Evaluation | [agentthree-agent-eval](https://github.com/nickgulrajani/agentthree-agent-eval) |
 | AWS FinOps Lab | [agentthree-aws-finops](https://github.com/nickgulrajani/agentthree-aws-finops) |
+| Hands-On AI Architecture Lab | [agentthree-ai-architect-lab](https://github.com/nickgulrajani/agentthree-ai-architect-lab) |
 
 ## Activity
 
 Daily changelog for this monorepo (newest first). Each day work lands, add a dated bullet here.
 
+- **2026-10-21** — Hands-On AI Architecture Lab added as an eighth project (`agentthree-ai-architect-lab/`): simulated lending assistant, BM25, prequal tool, eval gate, HTML storyboard. $0 cloud — no AWS/Azure/GCP/Anthropic on `make verify`.
 - **2026-10-21** — AWS FinOps Lab added as a seventh project (`agentthree-aws-finops/`): fixture CUR, tag/showback, Terraform-plan gates, savings math, HTML storyboard. $0 AWS — no account, no apply.
 - **2026-10-21** — Nightly GitHub Actions health checks: portfolio `make verify` plus per-project CI on the standalone mirrors (pytest/eval, and frontend lint/build where a UI exists). Same real suites; no dummy commits.
 - **2026-10-18** — Homepage / site references re-synced to portfolio table (test counts, Start here 21 pytest + 5/5 eval, standalone mirror links); Azure Zero Trust demo Use Case tab for parity with AWS/GCP.

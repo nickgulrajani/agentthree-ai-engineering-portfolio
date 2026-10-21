@@ -101,6 +101,15 @@ run "agentthree-aws-finops" bash -lc '
   .venv/bin/python -m pytest -q
 '
 
+# --- Hands-On AI Architecture Lab (simulated lending assistant; $0 cloud) ---
+run "agentthree-ai-architect-lab" bash -lc '
+  set -euo pipefail
+  cd agentthree-ai-architect-lab
+  python3 -m venv .venv
+  .venv/bin/pip install -q -e ".[dev]"
+  .venv/bin/python -m pytest -q
+'
+
 echo ""
 if [[ "$fail" -ne 0 ]]; then
   echo "✖ verify-all: one or more projects failed"
