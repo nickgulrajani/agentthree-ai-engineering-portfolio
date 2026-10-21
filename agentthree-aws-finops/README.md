@@ -4,7 +4,17 @@ Local FinOps control plane for an **illustrative credit card issuer**: see spend
 
 Companion browser lab: [AWS FinOps Lab](https://agentthree.ai/ai-engineering-lab/aws-finops-lab) · storyboard in [`web/index.html`](web/index.html)
 
-> **Non-billable portfolio demo.** No AWS account, no CUR export, no Cost Explorer, no `terraform apply`. All figures are fixtures. Python evaluates the same rules the HTML lab shows in OPA/Rego.
+**How to run:** [How_to_Run_Demo.md](./How_to_Run_Demo.md)
+
+> **$0 AWS. All data is simulated.** This repo does **not** call any AWS service.
+>
+> - No AWS account, credentials, or `AWS_PROFILE`
+> - No **boto3**, AWS CLI, or SDK
+> - No Cost Explorer APIs (`ce:GetCostAndUsage`, `ce:GetCostForecast`, …)
+> - No CUR export, Athena, CloudWatch API, Compute Optimizer, or Cloud Custodian against a live account
+> - No `terraform apply`
+>
+> Spend, tags, policy FAIL/PASS/WARN, and savings math come from local YAML/JSON fixtures. Names like “Cost Explorer” in the HTML lab are the **production mapping**, not live calls. See [docs/architecture.md](docs/architecture.md).
 
 ---
 
@@ -27,7 +37,7 @@ Companion browser lab: [AWS FinOps Lab](https://agentthree.ai/ai-engineering-lab
 | Live AWS / CUR / Cost Explorer | **Not deployed** | Documented production mapping only |
 | Cloud Custodian / Savings Plans purchase | **Not deployed** | Would be billable — out of scope |
 
-**Simulated vs cloud:** Coverage, gates, and savings math are real and tested. AWS *accounts, APIs, and applies* are intentionally absent so the demo stays at **$0**.
+**Simulated vs cloud:** Coverage, gates, and savings math are real and tested against fixtures. There is **no boto3** and **no Cost Explorer (or other AWS) API call**. Accounts, SDKs, and applies are absent so the demo stays at **$0**.
 
 Architecture: [docs/architecture.md](docs/architecture.md)
 
@@ -35,15 +45,12 @@ Architecture: [docs/architecture.md](docs/architecture.md)
 
 ## Quick start (local, free)
 
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-pytest -q
-agentthree-finops demo
-agentthree-finops serve   # opens the HTML lab
-```
+Step-by-step: **[How_to_Run_Demo.md](./How_to_Run_Demo.md)** (also [DEMO.md](./DEMO.md) for a 60-second version).
 
-Or: `./scripts/run_demo.sh`
+```bash
+make verify                 # creates .venv, pytest, CLI demo
+agentthree-finops serve     # HTML lab at http://127.0.0.1:8766/
+```
 
 ## What the CLI proves
 
