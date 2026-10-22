@@ -1,0 +1,54 @@
+# ==========================================
+# AgentThree AI Engineering Portfolio
+# ==========================================
+
+# Python virtual environments
+.venv/
+venv/
+env/
+.venv-*/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Test and coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+portfolio-verification.log
+
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+
+# Terraform generated files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+
+# Node.js generated files
+node_modules/
+.next/
+dist/
+build/
+coverage/
+
+# macOS
+.DS_Store
+
+# Editor temporary files
+*.swp
+*.swo
+*~
