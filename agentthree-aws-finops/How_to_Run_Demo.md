@@ -52,13 +52,20 @@ Those numbers are fixtures in `configs/` and `data/`. Nothing is read from AWS.
 
 ## 4. Browser storyboard
 
-Keep the venv active:
+```bash
+make serve
+```
+
+Or, without relying on PATH:
 
 ```bash
-agentthree-finops serve
+source .venv/bin/activate          # must be THIS project's .venv
+.venv/bin/agentthree-finops serve  # always works from the project root
 ```
 
 Opens http://127.0.0.1:8766/ — the original HTML lab (Why → See → Allocate → Guard → Enforce → Optimize). Static files only. Google Fonts may load in the browser; that is not AWS.
+
+If you see `command not found: agentthree-finops`, the console script is not on PATH. Use `.venv/bin/agentthree-finops serve` — do not run `./agentthree-finops` (there is no file in the project root).
 
 Or open `web/index.html` directly.
 

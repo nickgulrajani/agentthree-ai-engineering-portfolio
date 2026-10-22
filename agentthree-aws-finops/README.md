@@ -49,7 +49,8 @@ Step-by-step: **[How_to_Run_Demo.md](./How_to_Run_Demo.md)** (also [DEMO.md](./D
 
 ```bash
 make verify                 # creates .venv, pytest, CLI demo
-agentthree-finops serve     # HTML lab at http://127.0.0.1:8766/
+make serve                  # HTML lab at http://127.0.0.1:8766/
+# or: .venv/bin/agentthree-finops serve
 ```
 
 ## What the CLI proves

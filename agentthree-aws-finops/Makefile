@@ -13,7 +13,11 @@ verify: setup
 demo: setup
 	.venv/bin/agentthree-finops demo
 
+serve: setup
+	.venv/bin/agentthree-finops serve
+
 help:
 	@echo "make setup    # venv + install"
 	@echo "make verify   # setup if needed, then pytest + demo"
 	@echo "make demo     # CLI showcase"
+	@echo "make serve    # HTML lab at http://127.0.0.1:8766/"
